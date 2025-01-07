@@ -49,7 +49,7 @@ public abstract class Tower extends Unit {
       }
     }
     if (count > 2) {
-      rc.attack();
+      rc.attack(null);
     }
     else if (count == 1) {
       rc.attack(robots.get(0).getLocation());
@@ -61,7 +61,7 @@ public abstract class Tower extends Unit {
         rc.attack(robots.get(0).getLocation());
       }
       else {
-        rc.attac(robots.get(1).getLocation());
+        rc.attack(robots.get(1).getLocation());
       }
     }
   }
