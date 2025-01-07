@@ -52,6 +52,9 @@ public class Soldier extends MovableUnit {
     if (currentRuin == null) {
       searchForRuin();
     }
+    else {
+      checkToClearRuin();
+    }
 
     move();
     paint();
@@ -103,8 +106,15 @@ public class Soldier extends MovableUnit {
       if (tile.hasRuin()){
         currentRuin = tile;
         currentTask = SoldierTask.PAINTING_RUIN;
+        locationGoing = tile.getMapLocation();
         return;
       }
+    }
+  }
+
+  private void checkToClearRuin() {
+    if (rc.canSenseRobotAtLocation(currentRuin.getMapLocation())) {
+      currentRuin = null;
     }
   }
 }
