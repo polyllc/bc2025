@@ -15,6 +15,8 @@ public class Lib {
   int lastRoundNum;
   MapLocation spawnLocations[];
 
+  MapLocation center;
+
 
   static MapLocation noLoc = new MapLocation(256,256);
   static MapLocation noFlag = new MapLocation(257,257);
@@ -23,6 +25,7 @@ public class Lib {
     rc = robot;
     roundNum = rc.getRoundNum();
     lastRoundNum = roundNum--;
+    center = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
   }
   //pretty much any useful function or variables go here
   static final Direction[] directions = {
@@ -47,6 +50,11 @@ public class Lib {
           Direction.WEST,
           Direction.NORTHWEST,
   };
+
+  public Direction[] directionsToMiddle(MapLocation loc) {
+    Direction dirToCenter = loc.directionTo(center);
+    return startDirList(dirToCenter.getDirectionOrderNum(), 6);
+  }
 
   public int getQuadrant(){
     int width = rc.getMapWidth();
