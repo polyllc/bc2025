@@ -27,9 +27,8 @@ public abstract class Tower extends Unit {
         }
       }
     }
-
-    if (rc.getRoundNum() > 4 && rc.getRoundNum() < 8) {
-
+    else {
+      build();
     }
 
   }
@@ -41,6 +40,14 @@ public abstract class Tower extends Unit {
         if (rc.canAttack(robot.getLocation())) {
           rc.attack(robot.getLocation());
         }
+      }
+    }
+  }
+
+  private void build() throws GameActionException {
+    for (Direction dir : lib.directionsToMiddle(rc.getLocation())) {
+      if (rc.canBuildRobot(UnitType.SOLDIER, rc.getLocation().add(dir))) {
+        rc.buildRobot(UnitType.SOLDIER, rc.getLocation().add(dir));
       }
     }
   }
