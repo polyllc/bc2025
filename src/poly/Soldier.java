@@ -3,12 +3,10 @@ package poly;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 
-public class Soldier implements Unit {
-
-  RobotController rc;
+public class Soldier extends Unit {
 
   public Soldier(RobotController rc) {
-    this.rc = rc;
+    super(rc);
   }
 
   @Override

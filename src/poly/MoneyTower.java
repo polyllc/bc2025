@@ -5,9 +5,8 @@ import battlecode.common.RobotController;
 
 public class MoneyTower extends Tower {
 
-  RobotController rc;
   public MoneyTower(RobotController rc) {
-    this.rc = rc;
+    super(rc);
   }
 
   @Override

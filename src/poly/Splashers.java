@@ -3,12 +3,10 @@ package poly;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 
-public class Splashers implements Unit {
-
-  RobotController rc;
+public class Splashers extends Unit {
 
   public Splashers(RobotController rc) {
-    this.rc = rc;
+    super(rc);
   }
 
   @Override
