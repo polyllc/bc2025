@@ -2,6 +2,8 @@ package poly;
 
 import battlecode.common.*;
 
+import java.util.ArrayList;
+
 public class Nav {
   RobotController rc;
   // bug nav variables
@@ -352,6 +354,45 @@ public class Nav {
   boolean navTo(MapLocation destination) throws GameActionException {
     return navTo(destination, 1, 1);
   }
+
+  // finds the best move that minimizes paint loss
+  public MapLocation minPaintLoss(MapLocation currentPos) throws GameActionException {
+    int paintLoss = -1;
+    MapLocation bestLoc = new MapLocation(currentPos.x, currentPos.y);
+
+    for (Direction dir: Direction.allDirections()) {
+      int thisPaintLoss = 0;
+      MapLocation newLoc = new MapLocation(currentPos.x, currentPos.y).add(dir);
+      if (rc.canSenseLocation(newLoc)) {
+        MapInfo newLocInfo = rc.senseMapInfo(newLoc);
+
+        if (newLocInfo.getPaint().equals(PaintType.EMPTY)) {
+          thisPaintLoss++;
+        }
+        if (!newLocInfo.getPaint().isAlly()) {
+          thisPaintLoss += 2;
+        }
+
+        // get number of adjacent allies on enemy territory * 2
+        int extraPenalty = rc.senseNearbyRobots(20, rc.getTeam()).length * 2;
+        thisPaintLoss += extraPenalty;
+
+
+        // checks if this is the least amount of paint lost
+        if (paintLoss == -1 || thisPaintLoss < paintLoss) {
+          paintLoss = thisPaintLoss;
+          bestLoc = newLoc;
+        }
+      }
+
+    }
+
+    return bestLoc;
+
+
+
+  }
+
 
 
 
