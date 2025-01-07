@@ -479,5 +479,9 @@ public class Lib {
     }
   }
 
+  public boolean isTower(UnitType unit) {
+    return !(unit == UnitType.SOLDIER || unit == UnitType.MOPPER || unit == UnitType.SPLASHER);
+  }
+
 
 }

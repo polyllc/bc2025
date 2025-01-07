@@ -8,6 +8,7 @@ import battlecode.common.MapInfo;
 import battlecode.common.MapLocation;
 import battlecode.common.PaintType;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
 import battlecode.common.UnitType;
 
 public class Soldier extends MovableUnit {
@@ -25,9 +26,21 @@ public class Soldier extends MovableUnit {
 
   MapLocation taskLocation = Lib.noLoc;
 
+  SoldierTask currentTask = SoldierTask.EXPLORING;
+
+  MapLocation spawnedTower = Lib.noLoc;
+
 
   public Soldier(RobotController rc) {
     super(rc);
+    for (RobotInfo robot : rc.senseNearbyRobots()) {
+      if (robot.getTeam() == rc.getTeam()) {
+        if (lib.isTower(robot.getType())) {
+          spawnedTower = robot.getLocation();
+        }
+      }
+    }
+    directionGoing = rc.getLocation().directionTo(lib.center);
     // todo, the tower that spawn this robot might have an objective
     //  which may be in a message sent on over
   }
@@ -43,14 +56,16 @@ public class Soldier extends MovableUnit {
     move();
     paint();
 
+  }
 
-    if (curRuin != null){
-      MapLocation targetLoc = curRuin.getMapLocation();
+  private void paint() throws GameActionException {
+    if (currentTask == SoldierTask.PAINTING_RUIN) {
+      MapLocation targetLoc = currentRuin.getMapLocation();
       Direction dir = rc.getLocation().directionTo(targetLoc);
       if (rc.canMove(dir))
         rc.move(dir);
       // Mark the pattern we need to draw to build a tower here if we haven't already.
-      MapLocation shouldBeMarked = curRuin.getMapLocation().subtract(dir);
+      MapLocation shouldBeMarked = currentRuin.getMapLocation().subtract(dir);
       if (rc.senseMapInfo(shouldBeMarked).getMark() == PaintType.EMPTY && rc.canMarkTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc)){
         rc.markTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc);
         System.out.println("Trying to build a tower at " + targetLoc);
@@ -68,25 +83,18 @@ public class Soldier extends MovableUnit {
         rc.completeTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc);
         rc.setTimelineMarker("Tower built", 0, 255, 0);
         System.out.println("Built a tower at " + targetLoc + "!");
+        currentTask = SoldierTask.EXPLORING;
+        currentRuin = null;
       }
     }
-
-    // Move and attack randomly if no objective.
-    Direction dir = Lib.directions[rng.nextInt(Lib.directions.length)];
-    MapLocation nextLoc = rc.getLocation().add(dir);
-    if (rc.canMove(dir)){
-      rc.move(dir);
+    else {
+      // Try to paint beneath us as we walk to avoid paint penalties.
+      // Avoiding wasting paint by re-painting our own tiles.
+      MapInfo currentTile = rc.senseMapInfo(rc.getLocation());
+      if (!currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation())){
+        rc.attack(rc.getLocation());
+      }
     }
-    // Try to paint beneath us as we walk to avoid paint penalties.
-    // Avoiding wasting paint by re-painting our own tiles.
-    MapInfo currentTile = rc.senseMapInfo(rc.getLocation());
-    if (!currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation())){
-      rc.attack(rc.getLocation());
-    }
-  }
-
-  private void paint() {
-
   }
 
   private void searchForRuin() {
@@ -94,6 +102,8 @@ public class Soldier extends MovableUnit {
     for (MapInfo tile : nearbyTiles){
       if (tile.hasRuin()){
         currentRuin = tile;
+        currentTask = SoldierTask.PAINTING_RUIN;
+        return;
       }
     }
   }

@@ -10,7 +10,7 @@ import battlecode.common.RobotController;
 public abstract class MovableUnit extends Unit {
 
   protected boolean stopMoving = false;
-  protected Direction directionGoing;
+  protected Direction directionGoing = Direction.CENTER;
   protected MapLocation locationGoing = Lib.noLoc;
   protected Nav nav;
   protected boolean lastMovement = false;
