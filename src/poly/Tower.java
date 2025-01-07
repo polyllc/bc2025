@@ -3,6 +3,7 @@ package poly;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
 import battlecode.common.UnitType;
 
 public abstract class Tower extends Unit {
@@ -18,7 +19,7 @@ public abstract class Tower extends Unit {
 
     attack();
 
-    if (rc.getRoundNum() < 4) {
+    if (rc.getRoundNum() < 2) {
 
       for (Direction dir : lib.directionsToMiddle(rc.getLocation())) {
         if (rc.canBuildRobot(UnitType.SOLDIER, rc.getLocation().add(dir))) {
@@ -33,7 +34,14 @@ public abstract class Tower extends Unit {
 
   }
 
-  private void attack() {
-
+  private void attack() throws GameActionException {
+    // todo, of course make this much more complicated, quinny boy
+    for (RobotInfo robot : lib.sort(lib.getRobots())) {
+      if (robot.getTeam() != rc.getTeam()) {
+        if (rc.canAttack(robot.getLocation())) {
+          rc.attack(robot.getLocation());
+        }
+      }
+    }
   }
 }

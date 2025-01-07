@@ -14,4 +14,4 @@ lukasz
 - calculate the best MapLocation to paint, i.e. every maplocation has a value associated with it on how "valuable" it is to paint and how "safe" it is from enemies painting it
 
 maciek
-- grind
+- communication :(

@@ -15,11 +15,10 @@ public class Lib {
   int lastRoundNum;
   MapLocation spawnLocations[];
 
-  MapLocation center;
+  final MapLocation center;
 
 
   static MapLocation noLoc = new MapLocation(256,256);
-  static MapLocation noFlag = new MapLocation(257,257);
 
   public Lib(RobotController robot){
     rc = robot;
@@ -133,32 +132,15 @@ public class Lib {
     return currentRoundRobots;
   }
 
-  public boolean contains(RobotInfo[] robots, RobotInfo robot){
-    for(RobotInfo r : robots){
-      if(robot.equals(r)){
+  public <T> boolean contains(T[] ts, T t) {
+    for (T item : ts) {
+      if (item.equals(t)) {
         return true;
       }
     }
     return false;
   }
 
-  public boolean contains(MapLocation[] locs, MapLocation loc){
-    for(MapLocation l : locs){
-      if(l.equals(loc)){
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public boolean contains(int[] ints, int i){
-    for(int j : ints){
-      if(j == i){
-        return true;
-      }
-    }
-    return false;
-  }
 
   boolean detectCorner(Direction dirGoing) throws GameActionException {
     if(rc.getLocation().equals(new MapLocation(rc.getMapWidth() - 1, rc.getMapHeight() - 1)) ||

@@ -10,25 +10,40 @@ import battlecode.common.PaintType;
 import battlecode.common.RobotController;
 import battlecode.common.UnitType;
 
-public class Soldier extends Unit {
+public class Soldier extends MovableUnit {
 
-  public Soldier(RobotController rc) {
-    super(rc);
+
+  public enum SoldierTask {
+    PAINTING_RUIN,
+    EXPLORING,
+    PAINTING
   }
 
   static final Random rng = new Random(6147);
 
+  MapInfo currentRuin = null;
+
+  MapLocation taskLocation = Lib.noLoc;
+
+
+  public Soldier(RobotController rc) {
+    super(rc);
+    // todo, the tower that spawn this robot might have an objective
+    //  which may be in a message sent on over
+  }
+
+
   @Override
   public void takeTurn() throws GameActionException {
-    // Sense information about all visible nearby tiles.
-    MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
-    // Search for a nearby ruin to complete.
-    MapInfo curRuin = null;
-    for (MapInfo tile : nearbyTiles){
-      if (tile.hasRuin()){
-        curRuin = tile;
-      }
+
+    if (currentRuin == null) {
+      searchForRuin();
     }
+
+    move();
+    paint();
+
+
     if (curRuin != null){
       MapLocation targetLoc = curRuin.getMapLocation();
       Direction dir = rc.getLocation().directionTo(targetLoc);
@@ -67,6 +82,19 @@ public class Soldier extends Unit {
     MapInfo currentTile = rc.senseMapInfo(rc.getLocation());
     if (!currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation())){
       rc.attack(rc.getLocation());
+    }
+  }
+
+  private void paint() {
+
+  }
+
+  private void searchForRuin() {
+    MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
+    for (MapInfo tile : nearbyTiles){
+      if (tile.hasRuin()){
+        currentRuin = tile;
+      }
     }
   }
 }
