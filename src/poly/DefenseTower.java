@@ -11,6 +11,6 @@ public class DefenseTower extends Tower {
 
   @Override
   public void takeTurn() throws GameActionException {
-
+    super.takeTurn();
   }
 }

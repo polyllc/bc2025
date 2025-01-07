@@ -3,6 +3,7 @@ package poly;
 import battlecode.common.*;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 
@@ -291,8 +292,165 @@ public class Lib {
   // - what is really cool is that the code is the exact same, except the quadrants will be different depending on the symmetry
 
 
+  // todo, somehow update this to bc2025
+  private List<MapLocation> allySpawnZones() {
+    return List.of();
+  }
 
+  private boolean isEnemyCenter(MapLocation loc) {
+    return false;
+  }
 
+  private void setEnemyCenter(MapLocation loc) {
+
+  }
+
+  public void preliminaryAutofillEnemySpawnPoints() throws GameActionException {
+    for(MapLocation spawns : allySpawnZones()) {
+      int q = getQuadrant(spawns);
+      MapLocation origin = getOrigin(q);
+      int xOffset = spawns.x - origin.x;
+      int yOffset = spawns.y - origin.y;
+      int oppositeQ = 0;
+      if(q == 1){
+        oppositeQ = 3;
+      }
+      if(q == 2){
+        oppositeQ = 4;
+      }
+      if(q == 3){
+        oppositeQ = 1;
+      }
+      if(q == 4){
+        oppositeQ = 2;
+      }
+      MapLocation otherOrigin = getOrigin(oppositeQ);
+      int realX = 0;
+      int realY = 0;
+      switch (oppositeQ){
+        case 1: realX = otherOrigin.x + Math.abs(xOffset); realY = otherOrigin.y + Math.abs(yOffset); break;
+        case 2: realX = otherOrigin.x - Math.abs(xOffset); realY = otherOrigin.y + Math.abs(yOffset); break;
+        case 3: realX = otherOrigin.x - Math.abs(xOffset); realY = otherOrigin.y - Math.abs(yOffset); break;
+        case 4: realX = otherOrigin.x + Math.abs(xOffset); realY = otherOrigin.y - Math.abs(yOffset); break;
+      }
+      MapLocation enemyLoc = new MapLocation(realX, realY);
+      if (!isEnemyCenter(enemyLoc)) {
+        setEnemyCenter(enemyLoc);
+      }
+    }
+  }
+  public void autofillEnemySpawnPoints(MapLocation loc) throws GameActionException {
+    if(horizontalCalc(loc.add(rc.getLocation().directionTo(loc))) != noLoc){
+      System.out.println("Using Horizontal Calculations: " + loc.add(rc.getLocation().directionTo(loc)));
+      for(MapLocation spawns : allySpawnZones()) {
+        MapLocation enemyLoc = new MapLocation(spawns.x, rc.getMapHeight()-spawns.y);
+        if (!isEnemyCenter(enemyLoc.add(rc.getLocation().directionTo(loc)))) {
+          setEnemyCenter(enemyLoc.add(rc.getLocation().directionTo(loc)));
+        }
+      }
+    }
+
+    if(verticalCalc(loc.add(rc.getLocation().directionTo(loc))) != noLoc){
+      System.out.println("Using Vertical   Calculations");
+      for(MapLocation spawns : allySpawnZones()) {
+        MapLocation enemyLoc = new MapLocation(rc.getMapHeight()-spawns.x, spawns.y);
+        if (!isEnemyCenter(enemyLoc.add(rc.getLocation().directionTo(loc)))) {
+          setEnemyCenter(enemyLoc.add(rc.getLocation().directionTo(loc)));
+        }
+      }
+    }
+
+    if(rotationalCalc(loc) != noLoc){
+      System.out.println("Using Rotational Calculations");
+      for(MapLocation spawns : allySpawnZones()) {
+        int q = getQuadrant(spawns);
+        MapLocation origin = getOrigin(q);
+        int xOffset = spawns.x - origin.x;
+        int yOffset = spawns.y - origin.y;
+        int oppositeQ = 0;
+        if(q == 1){
+          oppositeQ = 3;
+        }
+        if(q == 2){
+          oppositeQ = 4;
+        }
+        if(q == 3){
+          oppositeQ = 1;
+        }
+        if(q == 4){
+          oppositeQ = 2;
+        }
+        MapLocation otherOrigin = getOrigin(oppositeQ);
+        int realX = 0;
+        int realY = 0;
+        switch (oppositeQ){
+          case 1: realX = otherOrigin.x + Math.abs(xOffset); realY = otherOrigin.y + Math.abs(yOffset); break;
+          case 2: realX = otherOrigin.x - Math.abs(xOffset); realY = otherOrigin.y + Math.abs(yOffset); break;
+          case 3: realX = otherOrigin.x - Math.abs(xOffset); realY = otherOrigin.y - Math.abs(yOffset); break;
+          case 4: realX = otherOrigin.x + Math.abs(xOffset); realY = otherOrigin.y - Math.abs(yOffset); break;
+        }
+        MapLocation enemyLoc = new MapLocation(realX, realY);
+        if (!isEnemyCenter(enemyLoc)) {
+          setEnemyCenter(enemyLoc);
+        }
+      }
+    }
+  }
+
+  MapLocation horizontalCalc(MapLocation loc) throws GameActionException {
+    for(MapLocation allySpawn : allySpawnZones()){
+      MapLocation currentGuess = new MapLocation(allySpawn.x, rc.getMapHeight()-allySpawn.y);
+      if(loc.distanceSquaredTo(currentGuess) < 3){
+        return currentGuess;
+      }
+    }
+    return noLoc;
+  }
+
+  MapLocation verticalCalc(MapLocation loc) throws GameActionException {
+    for(MapLocation allySpawn : allySpawnZones()){
+      MapLocation currentGuess = new MapLocation(rc.getMapHeight()-allySpawn.x, allySpawn.y);
+      if(loc.distanceSquaredTo(currentGuess) < 3){
+        return currentGuess;
+      }
+    }
+    return noLoc;
+  }
+
+  MapLocation rotationalCalc(MapLocation loc) throws GameActionException {
+    for(MapLocation allySpawn : allySpawnZones()){
+      int q = getQuadrant(allySpawn);
+      MapLocation origin = getOrigin(q);
+      int xOffset = allySpawn.x - origin.x;
+      int yOffset = allySpawn.y - origin.y;
+      int oppositeQ = 0;
+      if(q == 1){
+        oppositeQ = 3;
+      }
+      if(q == 2){
+        oppositeQ = 4;
+      }
+      if(q == 3){
+        oppositeQ = 1;
+      }
+      if(q == 4){
+        oppositeQ = 2;
+      }
+      MapLocation otherOrigin = getOrigin(oppositeQ);
+      int realX = 0;
+      int realY = 0;
+      switch (oppositeQ){
+        case 1: realX = otherOrigin.x + Math.abs(xOffset); realY = otherOrigin.y + Math.abs(yOffset); break;
+        case 2: realX = otherOrigin.x - Math.abs(xOffset); realY = otherOrigin.y + Math.abs(yOffset); break;
+        case 3: realX = otherOrigin.x - Math.abs(xOffset); realY = otherOrigin.y - Math.abs(yOffset); break;
+        case 4: realX = otherOrigin.x + Math.abs(xOffset); realY = otherOrigin.y - Math.abs(yOffset); break;
+      }
+      if(new MapLocation(realX, realY).distanceSquaredTo(loc) < 3){
+        return new MapLocation(realX, realY);
+      }
+    }
+    return noLoc;
+  }
 
 
 
