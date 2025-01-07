@@ -374,7 +374,7 @@ public class Nav {
         }
 
         // get number of adjacent allies on enemy territory * 2
-        int extraPenalty = rc.senseNearbyRobots(20, rc.getTeam()).length * 2;
+        int extraPenalty = rc.senseNearbyRobots(rc.getType().actionRadiusSquared, rc.getTeam()).length * 2;
         thisPaintLoss += extraPenalty;
 
 
@@ -388,9 +388,6 @@ public class Nav {
     }
 
     return bestLoc;
-
-
-
   }
 
 
