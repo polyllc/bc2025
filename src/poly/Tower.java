@@ -67,6 +67,7 @@ public abstract class Tower extends Unit {
   }
 
   private void build() throws GameActionException {
+
     for (Direction dir : lib.directionsToMiddle(rc.getLocation())) {
       if (rc.canBuildRobot(UnitType.SOLDIER, rc.getLocation().add(dir))) {
         rc.buildRobot(UnitType.SOLDIER, rc.getLocation().add(dir));
