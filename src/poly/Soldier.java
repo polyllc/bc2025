@@ -1,5 +1,7 @@
 package poly;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import battlecode.common.Direction;
@@ -29,6 +31,9 @@ public class Soldier extends MovableUnit {
   SoldierTask currentTask = SoldierTask.EXPLORING;
 
   MapLocation spawnedTower = Lib.noLoc;
+
+  List<MapLocation> previousRuins = new ArrayList<MapLocation>();
+  List<Integer> previousRuinsRounds = new ArrayList<Integer>();
 
 
   public Soldier(RobotController rc) {
@@ -60,6 +65,8 @@ public class Soldier extends MovableUnit {
 
     move();
     paint();
+
+    decreaseRuinRounds();
 
   }
 
@@ -108,8 +115,8 @@ public class Soldier extends MovableUnit {
 
   private void searchForRuin() {
     MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
+    // todo, return to "old" ruins
     for (MapInfo tile : nearbyTiles){
-      if (tile.hasRuin() && !rc.canSenseRobotAtLocation(tile.getMapLocation())){
         currentRuin = tile;
         currentTask = SoldierTask.PAINTING_RUIN;
         locationGoing = tile.getMapLocation();
@@ -118,11 +125,35 @@ public class Soldier extends MovableUnit {
     }
   }
 
-  private void checkToClearRuin() {
+  private void checkToClearRuin() throws GameActionException {
     if (rc.canSenseRobotAtLocation(currentRuin.getMapLocation())) {
       currentRuin = null;
       directionGoing = rc.getLocation().directionTo(locationGoing).opposite();
       locationGoing = Lib.noLoc;
     }
+    else if (rc.getLocation().distanceSquaredTo(currentRuin.getMapLocation()) < 5) {
+      int totalFilled = 0;
+      for (MapInfo patternTile : rc.senseNearbyMapInfos(currentRuin.getMapLocation(), 8)){
+        if (patternTile.getMark() != PaintType.EMPTY && patternTile.getPaint() != PaintType.EMPTY) {
+          totalFilled++;
+        }
+      }
+      if (totalFilled == 24) {
+        currentRuin = null;
+
+      }
+    }
+  }
+
+  private void decreaseRuinRounds() {
+    for (int i = 0; i < previousRuinsRounds.size(); i++) {
+      if (previousRuinsRounds.get(i) > 0) {
+        previousRuinsRounds.set(i, previousRuinsRounds.get(i) - 1);
+      }
+    }
+  }
+
+  private void explore() {
+
   }
 }
