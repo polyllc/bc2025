@@ -117,6 +117,17 @@ public class Soldier extends MovableUnit {
     MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
     // todo, return to "old" ruins
     for (MapInfo tile : nearbyTiles){
+<<<<<<< HEAD
+=======
+      if (tile.hasRuin()) {
+        for (int i = 0; i < previousRuinsRounds.size(); i++) {
+          if (previousRuins.get(i).equals(tile.getMapLocation())) {
+            if (previousRuinsRounds.get(i) > 0) { // our ruins are still on cooldown
+              return;
+            }
+          }
+        }
+>>>>>>> aa0ce54... clear when cooldown
         currentRuin = tile;
         currentTask = SoldierTask.PAINTING_RUIN;
         locationGoing = tile.getMapLocation();
@@ -139,8 +150,9 @@ public class Soldier extends MovableUnit {
         }
       }
       if (totalFilled == 24) {
+        previousRuins.add(currentRuin.getMapLocation());
+        previousRuinsRounds.add(50);
         currentRuin = null;
-
       }
     }
   }
@@ -153,7 +165,4 @@ public class Soldier extends MovableUnit {
     }
   }
 
-  private void explore() {
-
-  }
 }
