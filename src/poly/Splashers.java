@@ -9,8 +9,26 @@ public class Splashers extends MovableUnit {
     super(rc);
   }
 
+  public enum SplasherTask {
+    EXPLORE,
+    SPLASH_ENEMIES,
+    PAINT_WORLD
+  }
+
+  SplasherTask currentTask = SplasherTask.EXPLORE;
+
   @Override
   public void takeTurn() throws GameActionException {
+    move();
+    paint();
+  }
+
+  private void paint() {
 
   }
+
+  private void splashEnemies() throws GameActionException {
+
+  }
+
 }

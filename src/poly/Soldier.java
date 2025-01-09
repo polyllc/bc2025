@@ -1,6 +1,7 @@
 package poly;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -115,12 +116,22 @@ public class Soldier extends MovableUnit {
     }
     // Try to paint beneath us as we walk to avoid paint penalties.
     // Avoiding wasting paint by re-painting our own tiles.
+
+    MapInfo[] possiblePaintLocations = rc.senseNearbyMapInfos(8);
+    Arrays.sort(possiblePaintLocations, (a, b) ->  a.getMapLocation().distanceSquaredTo(rc.getLocation()) - b.getMapLocation().distanceSquaredTo(rc.getLocation()));
+    for (MapInfo loc : possiblePaintLocations) {
+      if (!loc.getPaint().isAlly() && rc.canAttack(loc.getMapLocation())) {
+        System.out.println("Painted " + loc.getMapLocation());
+        rc.attack(loc.getMapLocation());
+      }
+    }
+
     for (Direction dir : Lib.directionsCenter) {
       if (rc.canSenseLocation(rc.getLocation().add(dir))) {
         MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
         if (!currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation().add(dir))) {
           System.out.println("Painted " + currentTile.getMapLocation());
-          rc.attack(rc.getLocation());
+          rc.attack(currentTile.getMapLocation());
         }
       }
     }

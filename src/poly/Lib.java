@@ -52,7 +52,7 @@ public class Lib {
 
   public Direction[] directionsToMiddle(MapLocation loc) {
     Direction dirToCenter = loc.directionTo(center);
-    return startDirList(dirToCenter.getDirectionOrderNum(), 6);
+    return startDirList(dirToCenter.getDirectionOrderNum(), 10);
   }
 
   public int getQuadrant(){

@@ -9,8 +9,38 @@ public class Mopper extends MovableUnit {
     super(rc);
   }
 
+  public enum MopperTask {
+    EXPLORING,
+    MOPPING_ENEMY_TILES,
+    MOPPING_ENEMIES,
+    MOPPING_RUIN
+  }
+
+  MopperTask currentTask = MopperTask.EXPLORING;
+
   @Override
   public void takeTurn() throws GameActionException {
+
+
+    paint();
+    move();
+
+
+  }
+
+  private void paint() {
+
+  }
+
+  private void mopEnemies() {
+
+  }
+
+  private void mopEnemyTiles() {
+
+  }
+
+  private void cleanUpRuin() {
 
   }
 }

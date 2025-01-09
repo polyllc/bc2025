@@ -138,14 +138,14 @@ public class Nav {
 
   private boolean enemyPaint(Direction dir) throws GameActionException {
     return (avoidEnemyPaint && rc.canSenseLocation(rc.getLocation().add(dir))
-            && rc.senseMapInfo(rc.getLocation().add(dir)).getPaint() != PaintType.ENEMY_PRIMARY
-            && rc.senseMapInfo(rc.getLocation().add(dir)).getPaint() != PaintType.ENEMY_SECONDARY);
+            && rc.senseMapInfo(rc.getLocation().add(dir)).getPaint() == PaintType.ENEMY_PRIMARY
+            && rc.senseMapInfo(rc.getLocation().add(dir)).getPaint() == PaintType.ENEMY_SECONDARY);
   }
 
   private boolean enemyPaint(MapLocation loc) throws GameActionException {
     return (avoidEnemyPaint && rc.canSenseLocation(loc)
-            && rc.senseMapInfo(loc).getPaint() != PaintType.ENEMY_PRIMARY
-            && rc.senseMapInfo(loc).getPaint() != PaintType.ENEMY_SECONDARY);
+            && rc.senseMapInfo(loc).getPaint() == PaintType.ENEMY_PRIMARY
+            && rc.senseMapInfo(loc).getPaint() == PaintType.ENEMY_SECONDARY);
   }
 
   boolean bugNavTo(MapLocation destination) throws GameActionException {
