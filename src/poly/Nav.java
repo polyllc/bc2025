@@ -13,6 +13,8 @@ public class Nav {
   Direction lastDirMoved = null;
   MapLocation bugNavTarget = null;
 
+  boolean avoidEnemyPaint = false;
+
 
 
   public Nav(RobotController robot){
@@ -134,6 +136,18 @@ public class Nav {
     }
   }
 
+  private boolean enemyPaint(Direction dir) throws GameActionException {
+    return (avoidEnemyPaint && rc.canSenseLocation(rc.getLocation().add(dir))
+            && rc.senseMapInfo(rc.getLocation().add(dir)).getPaint() == PaintType.ENEMY_PRIMARY
+            && rc.senseMapInfo(rc.getLocation().add(dir)).getPaint() == PaintType.ENEMY_SECONDARY);
+  }
+
+  private boolean enemyPaint(MapLocation loc) throws GameActionException {
+    return (avoidEnemyPaint && rc.canSenseLocation(loc)
+            && rc.senseMapInfo(loc).getPaint() == PaintType.ENEMY_PRIMARY
+            && rc.senseMapInfo(loc).getPaint() == PaintType.ENEMY_SECONDARY);
+  }
+
   boolean bugNavTo(MapLocation destination) throws GameActionException {
     // if target has changed, reset bug nav
     if (bugNavTarget == null || !(destination.equals(bugNavTarget))) {
@@ -145,7 +159,7 @@ public class Nav {
     boolean noWalls = true;
     MapLocation currentLoc = rc.getLocation();
     for (Direction dir : Lib.directions)
-      if (!(rc.canMove(dir))) //|| rc.senseFlooding(currentLoc.add(dir))) maybe we change this to whatever those cloud things do
+      if (!(rc.canMove(dir)) || enemyPaint(dir)) //|| rc.senseFlooding(currentLoc.add(dir))) maybe we change this to whatever those cloud things do
         noWalls = false;
     if (noWalls) {
       useBugNav = false;
@@ -207,7 +221,7 @@ public class Nav {
         }
         else {
           MapInfo mapInfo = rc.senseMapInfo(loc);
-          valid = mapInfo.isPassable();
+          valid = mapInfo.isPassable() && !enemyPaint(loc);
         }
         // boolean valid = rc.canSenseLocation(loc) && !rc.isLocationOccupied(loc) && rc.senseMapInfo(loc).getCurrentDirection() == Direction.CENTER;
         validLocs[x][y] = valid;

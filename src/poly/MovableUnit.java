@@ -25,37 +25,47 @@ public abstract class MovableUnit extends Unit {
   }
 
   protected void move() throws GameActionException {
-    if(!stopMoving) {
-      if (lib.detectCorner(directionGoing) || lib.detectCorner(rc.getLocation(), 5)) {
-        // directionGoing = rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
-        if (rng.nextBoolean()) {
-          directionGoing = directionGoing.rotateLeft().rotateLeft();
-        } else {
-          directionGoing = directionGoing.rotateRight().rotateRight();
-        }
+    explore();
+    if (locationGoing == Lib.noLoc) {
+      if (directionGoing != Direction.CENTER) {
+        nav.goTo(rc.getLocation().add(directionGoing));
+        turnsMovingInDirection++;
       }
-      if (locationGoing == Lib.noLoc) {
-        if (directionGoing != Direction.CENTER) {
-          nav.goTo(rc.getLocation().add(directionGoing));
-          //turnsMovingInDirection++;
-        }
-      } else {
+    } else {
 
-        boolean goToResult = nav.goTo(locationGoing, false);
-        lastMovement = goToResult; //if we need to save bytecode, well this is where we're saving it
-        lastLocationGoing = locationGoing;
+      boolean goToResult = nav.goTo(locationGoing, false);
+      lastMovement = goToResult; //if we need to save bytecode, well this is where we're saving it
+      lastLocationGoing = locationGoing;
+      if (!lastMovement) {
+        lastMovement = goToResult;
         if (!lastMovement) {
-          lastMovement = goToResult;
+            lastMovement = nav.navTo(locationGoing);
           if (!lastMovement) {
-            //    lastMovement = nav.navTo(locationGoing);
-            if (!lastMovement) {
-              // lastMovement = nav.goTo(rc.getLocation().directionTo(locationGoing));
-            }
+            lastMovement = nav.goTo(rc.getLocation().directionTo(locationGoing));
           }
         }
-        turnsMovingInDirection = 0;
       }
     }
+  }
+
+  protected void explore() throws GameActionException {
+    if (lib.detectCorner(directionGoing) || lib.detectCorner(rc.getLocation(), 5)) {
+      // directionGoing = rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
+      if (rng.nextBoolean()) {
+        directionGoing = directionGoing.rotateLeft().rotateLeft();
+      } else {
+        directionGoing = directionGoing.rotateRight().rotateRight();
+      }
+    }
+    if (turnsMovingInDirection > (rc.getMapHeight() + rc.getMapWidth()) / 2.5) {
+      turnsMovingInDirection = 0;
+      if (rng.nextBoolean()) {
+        directionGoing = directionGoing.rotateLeft().rotateLeft();
+      } else {
+        directionGoing = directionGoing.rotateRight().rotateRight();
+      }
+    }
+
   }
 
 }
