@@ -17,3 +17,7 @@ lukasz
 maciek
 - communication :(
 - movableunit exploration
+- soldiers
+  - make sure that they eventually build a tower
+  - come back later to see if moppers did their thing
+  - go towards empty tiles/explore/paint better
