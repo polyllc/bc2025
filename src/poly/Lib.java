@@ -479,6 +479,11 @@ public class Lib {
     }
   }
 
+  /**
+   * checks if it is a tower
+   * @param unit unittype
+   * @return bool
+   */
   public boolean isTower(UnitType unit) {
     return !(unit == UnitType.SOLDIER || unit == UnitType.MOPPER || unit == UnitType.SPLASHER);
   }

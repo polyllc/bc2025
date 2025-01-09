@@ -19,7 +19,8 @@ public class Soldier extends MovableUnit {
   public enum SoldierTask {
     PAINTING_RUIN,
     EXPLORING,
-    PAINTING
+    PAINTING,
+    WAITING_TO_BUILD_RUIN
   }
 
   static final Random rng = new Random(6147);
@@ -45,7 +46,8 @@ public class Soldier extends MovableUnit {
         }
       }
     }
-    directionGoing = rc.getLocation().directionTo(lib.center);
+    directionGoing = lib.startDirList(0, rc.getID())[0];
+    // nav.avoidEnemyPaint = true;
     // todo, the tower that spawn this robot might have an objective
     //  which may be in a message sent on over
   }
@@ -54,32 +56,58 @@ public class Soldier extends MovableUnit {
   @Override
   public void takeTurn() throws GameActionException {
 
-    rc.setIndicatorString("Current locationGoing: " + locationGoing.toString() + " | currentTask: " + currentTask);
+    rc.setIndicatorString("lG: " + locationGoing.toString()
+            + " | cT: " + currentTask
+            + " | dG: " + directionGoing);
 
     if (currentRuin == null) {
       searchForRuin();
     }
-    else {
-      checkToClearRuin();
+
+    if (currentTask == SoldierTask.EXPLORING) {
+      locationGoing = Lib.noLoc;
     }
 
-    move();
+    if (currentTask == SoldierTask.PAINTING_RUIN) {
+      if (locationGoing.equals(Lib.noLoc)) {
+        currentTask = SoldierTask.EXPLORING;
+      }
+    }
+
     paint();
+    checkToClearRuin();
+    move();
+
 
     decreaseRuinRounds();
 
   }
 
+  protected void move() throws GameActionException {
+    if (currentTask == SoldierTask.EXPLORING) {
+      explore();
+    }
+    super.move();
+  }
+
   private void paint() throws GameActionException {
-    if (currentTask == SoldierTask.PAINTING_RUIN) {
+    if (currentTask == SoldierTask.PAINTING_RUIN && currentRuin != null) {
       paintRuin();
     }
     else {
-      // Try to paint beneath us as we walk to avoid paint penalties.
-      // Avoiding wasting paint by re-painting our own tiles.
-      MapInfo currentTile = rc.senseMapInfo(rc.getLocation());
-      if (!currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation())){
-        rc.attack(rc.getLocation());
+      if (currentTask == SoldierTask.PAINTING_RUIN) {
+        currentTask = SoldierTask.EXPLORING;
+        locationGoing = Lib.noLoc;
+      }
+    }
+    // Try to paint beneath us as we walk to avoid paint penalties.
+    // Avoiding wasting paint by re-painting our own tiles.
+    for (Direction dir : Lib.directionsCenter) {
+      if (rc.canSenseLocation(rc.getLocation().add(dir))) {
+        MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
+        if (!currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation().add(dir))) {
+          rc.attack(rc.getLocation());
+        }
       }
     }
   }
@@ -117,8 +145,6 @@ public class Soldier extends MovableUnit {
     MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
     // todo, return to "old" ruins
     for (MapInfo tile : nearbyTiles){
-<<<<<<< HEAD
-=======
       if (tile.hasRuin()) {
         for (int i = 0; i < previousRuinsRounds.size(); i++) {
           if (previousRuins.get(i).equals(tile.getMapLocation())) {
@@ -127,7 +153,6 @@ public class Soldier extends MovableUnit {
             }
           }
         }
->>>>>>> aa0ce54... clear when cooldown
         currentRuin = tile;
         currentTask = SoldierTask.PAINTING_RUIN;
         locationGoing = tile.getMapLocation();
@@ -136,23 +161,27 @@ public class Soldier extends MovableUnit {
     }
   }
 
+  //todo enemy paint
   private void checkToClearRuin() throws GameActionException {
-    if (rc.canSenseRobotAtLocation(currentRuin.getMapLocation())) {
-      currentRuin = null;
-      directionGoing = rc.getLocation().directionTo(locationGoing).opposite();
-      locationGoing = Lib.noLoc;
-    }
-    else if (rc.getLocation().distanceSquaredTo(currentRuin.getMapLocation()) < 5) {
-      int totalFilled = 0;
-      for (MapInfo patternTile : rc.senseNearbyMapInfos(currentRuin.getMapLocation(), 8)){
-        if (patternTile.getMark() != PaintType.EMPTY && patternTile.getPaint() != PaintType.EMPTY) {
-          totalFilled++;
-        }
-      }
-      if (totalFilled == 24) {
-        previousRuins.add(currentRuin.getMapLocation());
-        previousRuinsRounds.add(50);
+    if (currentRuin != null) {
+      if (rc.canSenseRobotAtLocation(currentRuin.getMapLocation())) {
         currentRuin = null;
+        //directionGoing = rc.getLocation().directionTo(locationGoing).opposite();
+        System.out.println("Cleared ruin");
+        locationGoing = Lib.noLoc;
+      } else if (rc.getLocation().distanceSquaredTo(currentRuin.getMapLocation()) < 5) {
+        int totalFilled = 0;
+        for (MapInfo patternTile : rc.senseNearbyMapInfos(currentRuin.getMapLocation(), 8)) {
+          if (patternTile.getMark() != PaintType.EMPTY && patternTile.getPaint() != PaintType.EMPTY) {
+            totalFilled++;
+          }
+        }
+        if (totalFilled == 24) {
+          previousRuins.add(currentRuin.getMapLocation());
+          previousRuinsRounds.add(50);
+          currentTask = SoldierTask.EXPLORING;
+          currentRuin = null;
+        }
       }
     }
   }
