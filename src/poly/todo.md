@@ -21,3 +21,4 @@ maciek
   - make sure that they eventually build a tower
   - come back later to see if moppers did their thing
   - go towards empty tiles/explore/paint better
+  - go back to paint tower when low on paint
