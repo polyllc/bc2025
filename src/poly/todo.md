@@ -6,13 +6,18 @@ jessr
     additional paint penalty of 2 times the number of adjacent allied bots (bots in the 8 squares around the
     robot) for each turn they spend on enemy territory.
     ```
+- moppers
+- tower build order
+- keep bots away from each other
 
 quinny
 - grind
 - AoE/Single attack formula
+- splashers
 
 lukasz 
 - calculate the best MapLocation to paint, i.e. every maplocation has a value associated with it on how "valuable" it is to paint and how "safe" it is from enemies painting it
+- https://www.youtube.com/@MITBattlecode watch the communication lecture
 
 maciek
 - communication :(

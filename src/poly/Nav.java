@@ -383,7 +383,7 @@ public class Nav {
         if (newLocInfo.getPaint().equals(PaintType.EMPTY)) {
           thisPaintLoss++;
         }
-        if (!newLocInfo.getPaint().isAlly()) {
+        else if (!newLocInfo.getPaint().isAlly()) {
           thisPaintLoss += 2;
         }
 

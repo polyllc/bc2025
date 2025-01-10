@@ -126,15 +126,15 @@ public class Soldier extends MovableUnit {
       }
     }
 
-    for (Direction dir : Lib.directionsCenter) {
-      if (rc.canSenseLocation(rc.getLocation().add(dir))) {
-        MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
-        if (!currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation().add(dir))) {
-          System.out.println("Painted " + currentTile.getMapLocation());
-          rc.attack(currentTile.getMapLocation());
-        }
-      }
-    }
+//    for (Direction dir : Lib.directionsCenter) {
+//      if (rc.canSenseLocation(rc.getLocation().add(dir))) {
+//        MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
+//        if (!currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation().add(dir))) {
+//          System.out.println("Painted " + currentTile.getMapLocation());
+//          rc.attack(currentTile.getMapLocation());
+//        }
+//      }
+//    }
   }
 
   private void paintRuin() throws GameActionException {
