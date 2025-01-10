@@ -36,7 +36,7 @@ public class Soldier extends MovableUnit {
   SoldierTask currentTask = SoldierTask.EXPLORING;
   SoldierTask previousTask = SoldierTask.EXPLORING;
 
-  MapLocation spawnedTower = Lib.noLoc;
+
 
   List<MapLocation> previousRuins = new ArrayList<MapLocation>();
   List<Integer> previousRuinsRounds = new ArrayList<Integer>();
@@ -44,14 +44,16 @@ public class Soldier extends MovableUnit {
 
   public Soldier(RobotController rc) {
     super(rc);
-    for (RobotInfo robot : rc.senseNearbyRobots()) {
-      if (robot.getTeam() == rc.getTeam()) {
-        if (lib.isTower(robot.getType())) {
-          spawnedTower = robot.getLocation();
-        }
-      }
+    directionGoing = rc.getLocation().directionTo(lib.center);
+    if (rc.getID() % 2 == 0) {
+      directionGoing = directionGoing.rotateLeft();
     }
-    directionGoing = lib.startDirList(0, rc.getID())[0];
+    else {
+      directionGoing = directionGoing.rotateRight();
+    }
+    if (rc.getID() % 3 == 0) {
+      directionGoing = rc.getLocation().directionTo(lib.center);
+    }
     nav.avoidEnemyPaint = true;
     // todo, the tower that spawn this robot might have an objective
     //  which may be in a message sent on over
@@ -60,6 +62,8 @@ public class Soldier extends MovableUnit {
 
   @Override
   public void takeTurn() throws GameActionException {
+
+    updateNearbyTowers();
 
     rc.setIndicatorString("lG: " + locationGoing.toString()
             + " | cT: " + currentTask
@@ -156,24 +160,35 @@ public class Soldier extends MovableUnit {
     Direction dir = rc.getLocation().directionTo(targetLoc);
     // Mark the pattern we need to draw to build a tower here if we haven't already.
     MapLocation shouldBeMarked = currentRuin.getMapLocation().subtract(dir);
-    if (rc.senseMapInfo(shouldBeMarked).getMark() == PaintType.EMPTY && rc.canMarkTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc)){
-      rc.markTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc);
+    if (rc.senseMapInfo(shouldBeMarked).getMark() == PaintType.EMPTY && rc.canMarkTowerPattern(getBestTowerToMark(), targetLoc)){
+      rc.markTowerPattern(getBestTowerToMark(), targetLoc);
       System.out.println("Trying to build a tower at " + targetLoc);
     }
     // Fill in any spots in the pattern with the appropriate paint.
     for (MapInfo patternTile : rc.senseNearbyMapInfos(targetLoc, 8)){
-      if (patternTile.getMark() != patternTile.getPaint() && patternTile.getMark() != PaintType.EMPTY
-          && patternTile.getPaint() == PaintType.EMPTY) {
-        boolean useSecondaryColor = patternTile.getMark() == PaintType.ALLY_SECONDARY;
-        if (rc.canAttack(patternTile.getMapLocation())) {
-          System.out.println("PR Painted " + patternTile.getMapLocation());
-          rc.attack(patternTile.getMapLocation(), useSecondaryColor);
+      if (patternTile.getMark() != patternTile.getPaint() && patternTile.getMark() != PaintType.EMPTY) {
+        if (patternTile.getPaint() != PaintType.ENEMY_PRIMARY && patternTile.getPaint() != PaintType.ENEMY_SECONDARY) {
+          boolean useSecondaryColor = patternTile.getMark() == PaintType.ALLY_SECONDARY;
+          if (rc.canAttack(patternTile.getMapLocation())) {
+            System.out.println("PR Painted " + patternTile.getMapLocation());
+            rc.attack(patternTile.getMapLocation(), useSecondaryColor);
+          }
         }
       }
     }
     // Complete the ruin if we can.
-    if (rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc)){
-      rc.completeTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc);
+    if (rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, targetLoc) ||
+            rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, targetLoc) ||
+            rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc)){
+      if (rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, targetLoc)) {
+        rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, targetLoc);
+      }
+      else if (rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, targetLoc)) {
+        rc.completeTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, targetLoc);
+      }
+      else {
+        rc.completeTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc);
+      }
       rc.setTimelineMarker("Tower built", 0, 255, 0);
       System.out.println("Built a tower at " + targetLoc + "!");
       currentTask = SoldierTask.EXPLORING;
@@ -213,13 +228,13 @@ public class Soldier extends MovableUnit {
       } else if (rc.getLocation().distanceSquaredTo(currentRuin.getMapLocation()) < 5) {
         int totalFilled = 0;
         for (MapInfo patternTile : rc.senseNearbyMapInfos(currentRuin.getMapLocation(), 8)) {
-          if (patternTile.getMark() != PaintType.EMPTY && patternTile.getPaint() != PaintType.EMPTY) {
+          if (patternTile.getMark() != PaintType.EMPTY && (patternTile.getPaint() == PaintType.ENEMY_PRIMARY || patternTile.getPaint() == PaintType.ENEMY_SECONDARY)) {
             totalFilled++;
           }
         }
         if (totalFilled == 24) {
           previousRuins.add(currentRuin.getMapLocation());
-          previousRuinsRounds.add(50);
+          previousRuinsRounds.add(10);
           currentTask = SoldierTask.EXPLORING;
           currentRuin = null;
         }
@@ -236,7 +251,28 @@ public class Soldier extends MovableUnit {
   }
 
   private void goTowardsEmptySpots() {
+    if (currentTask == SoldierTask.EXPLORING) {
+      MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
+      for (MapInfo tile : nearbyTiles) {
+        if (tile.isPassable()) {
+          if (tile.getPaint() == PaintType.EMPTY) { // todo, make this more random
+            directionGoing = rc.getLocation().directionTo(tile.getMapLocation());
+            return;
+          }
+        }
+      }
+    }
+  }
 
+  private UnitType getBestTowerToMark() {
+    if (rc.getRoundNum() < 60) {
+      return UnitType.LEVEL_ONE_MONEY_TOWER;
+    }
+    else if (rc.getRoundNum() < 400) {
+      return UnitType.LEVEL_ONE_PAINT_TOWER;
+    }
+    return rng.nextInt(0, 2) == 0 ?
+            UnitType.LEVEL_ONE_DEFENSE_TOWER : UnitType.LEVEL_ONE_PAINT_TOWER;
   }
 
 }

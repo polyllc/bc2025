@@ -1,11 +1,14 @@
 package poly;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
 
 public abstract class MovableUnit extends Unit {
 
@@ -19,9 +22,21 @@ public abstract class MovableUnit extends Unit {
 
   protected final Random rng = new Random(6147);
 
+  protected List<MapLocation> towerLocations = new ArrayList<>();
+
+  protected MapLocation spawnedTower = Lib.noLoc;
+
+
   public MovableUnit(RobotController rc) {
     super(rc);
     nav = new Nav(rc);
+    for (RobotInfo robot : rc.senseNearbyRobots()) {
+      if (robot.getTeam() == rc.getTeam()) {
+        if (lib.isTower(robot.getType())) {
+          spawnedTower = robot.getLocation();
+        }
+      }
+    }
   }
 
   protected void move() throws GameActionException {
@@ -65,7 +80,19 @@ public abstract class MovableUnit extends Unit {
         directionGoing = directionGoing.rotateRight().rotateRight();
       }
     }
+  }
 
+  protected void updateNearbyTowers() {
+    RobotInfo[] robots = lib.getRobots(false);
+    for (RobotInfo robot : robots) {
+      if (robot.getTeam() == rc.getTeam()) {
+        if (lib.isTower(robot.getType())) {
+          if (!towerLocations.contains(robot.getLocation())) {
+            towerLocations.add(robot.getLocation());
+          }
+        }
+      }
+    }
   }
 
 }

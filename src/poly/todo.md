@@ -18,12 +18,11 @@ quinny
 lukasz 
 - calculate the best MapLocation to paint, i.e. every maplocation has a value associated with it on how "valuable" it is to paint and how "safe" it is from enemies painting it
 - https://www.youtube.com/@MITBattlecode watch the communication lecture
+- communication
 
 maciek
-- communication :(
 - movableunit exploration
 - soldiers
   - make sure that they eventually build a tower
   - come back later to see if moppers did their thing
-  - go towards empty tiles/explore/paint better
-  - go back to paint tower when low on paint
+  - towers that should spawn are the ones that are closest to the enemy towers
