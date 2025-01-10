@@ -2,9 +2,7 @@ package poly;
 
 import battlecode.common.*;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 
 public class Lib {
@@ -123,10 +121,10 @@ public class Lib {
 
   RobotInfo[] currentRoundRobots =  new RobotInfo[0];
 
-  public RobotInfo[] getRobots(){
+  public RobotInfo[] getRobots(boolean sort){
     roundNum = rc.getRoundNum();
     if(currentRoundRobots.length == 0 || lastRoundNum < roundNum){
-      currentRoundRobots = sort(rc.senseNearbyRobots());
+      currentRoundRobots = sort ? this.sort(rc.senseNearbyRobots()) : rc.senseNearbyRobots();
       lastRoundNum = roundNum;
     }
     return currentRoundRobots;

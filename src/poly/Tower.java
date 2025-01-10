@@ -39,7 +39,7 @@ public abstract class Tower extends Unit {
     // todo, of course make this much more complicated, quinny boy
     int count = 0;
     ArrayList<RobotInfo> robots = new ArrayList<RobotInfo>();
-    for (RobotInfo robot : lib.sort(lib.getRobots())) {
+    for (RobotInfo robot : lib.sort(lib.getRobots(false))) {
       if (robot.getTeam() != rc.getTeam()) {
         if (rc.canAttack(robot.getLocation())) {
           count++;
@@ -68,9 +68,11 @@ public abstract class Tower extends Unit {
 
   private void build() throws GameActionException {
 
-    for (Direction dir : lib.directionsToMiddle(rc.getLocation())) {
-      if (rc.canBuildRobot(getBestRobot(), rc.getLocation().add(dir))) {
-        rc.buildRobot(getBestRobot(), rc.getLocation().add(dir));
+    if (rc.getRoundNum() < 50 || rc.getMoney() > 1200) {
+      for (Direction dir : lib.directionsToMiddle(rc.getLocation())) {
+        if (rc.canBuildRobot(getBestRobot(), rc.getLocation().add(dir))) {
+          rc.buildRobot(getBestRobot(), rc.getLocation().add(dir));
+        }
       }
     }
   }
