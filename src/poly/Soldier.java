@@ -80,16 +80,30 @@ public class Soldier extends MovableUnit {
       }
     }
     move();
-    paint();
+    if (currentTask != SoldierTask.GETTING_MORE_PAINT) {
+      paint();
+    }
     checkToClearRuin();
 
-    if (rc.getPaint() < 20) {
+    if (rc.getPaint() < 0 && currentTask != SoldierTask.GETTING_MORE_PAINT) {
       previousTask = currentTask;
       previousLocationGoing = locationGoing;
       currentTask = SoldierTask.GETTING_MORE_PAINT;
+      locationGoing = spawnedTower;
     }
 
-
+    if (currentTask == SoldierTask.GETTING_MORE_PAINT) {
+      if (rc.getLocation().distanceSquaredTo(locationGoing) < 3) {
+        RobotInfo towerInfo = rc.senseRobotAtLocation(locationGoing);
+        int max = Math.max(-50, -(200 - rc.getPaint()));
+        //max = Math.min(100, Math.max(towerInfo.getPaintAmount(), max));
+        if (rc.canTransferPaint(locationGoing, max)) {
+          rc.transferPaint(locationGoing, max);
+          currentTask = previousTask;
+          locationGoing = previousLocationGoing;
+        }
+      }
+    }
 
 
 
