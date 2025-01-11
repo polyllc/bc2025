@@ -67,7 +67,8 @@ public class Soldier extends MovableUnit {
 
     rc.setIndicatorString("lG: " + locationGoing.toString()
             + " | cT: " + currentTask
-            + " | dG: " + directionGoing);
+            + " | dG: " + directionGoing
+            + " | cR: " + currentRuin);
 
     if (currentRuin == null) {
       searchForRuin();
@@ -139,7 +140,7 @@ public class Soldier extends MovableUnit {
     Arrays.sort(possiblePaintLocations, (a, b) ->  a.getMapLocation().distanceSquaredTo(rc.getLocation()) - b.getMapLocation().distanceSquaredTo(rc.getLocation()));
     for (MapInfo loc : possiblePaintLocations) {
       if (!loc.getPaint().isAlly() && rc.canAttack(loc.getMapLocation())) {
-        System.out.println("Painted " + loc.getMapLocation());
+       // System.out.println("Painted " + loc.getMapLocation());
         rc.attack(loc.getMapLocation());
       }
     }
@@ -156,7 +157,7 @@ public class Soldier extends MovableUnit {
   }
 
   private void paintRuin() throws GameActionException {
-    MapLocation targetLoc = currentRuin.getMapLocation();
+    MapLocation targetLoc = locationGoing;
     Direction dir = rc.getLocation().directionTo(targetLoc);
     // Mark the pattern we need to draw to build a tower here if we haven't already.
     MapLocation shouldBeMarked = currentRuin.getMapLocation().subtract(dir);
@@ -179,7 +180,7 @@ public class Soldier extends MovableUnit {
     // Complete the ruin if we can.
     if (rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, targetLoc) ||
             rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, targetLoc) ||
-            rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc)){
+            rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc)) {
       if (rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, targetLoc)) {
         rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, targetLoc);
       }
@@ -220,7 +221,14 @@ public class Soldier extends MovableUnit {
   //todo enemy paint
   private void checkToClearRuin() throws GameActionException {
     if (currentRuin != null) {
-      if (rc.canSenseRobotAtLocation(currentRuin.getMapLocation())) {
+      if (rc.getNumberTowers() >= 25) {
+        locationGoing = Lib.noLoc;
+        previousRuins.add(currentRuin.getMapLocation());
+        previousRuinsRounds.add(50);
+        currentTask = SoldierTask.EXPLORING;
+        currentRuin = null;
+      }
+      else if (rc.canSenseRobotAtLocation(currentRuin.getMapLocation())) {
         currentRuin = null;
         //directionGoing = rc.getLocation().directionTo(locationGoing).opposite();
         System.out.println("Cleared ruin");
@@ -228,13 +236,14 @@ public class Soldier extends MovableUnit {
       } else if (rc.getLocation().distanceSquaredTo(currentRuin.getMapLocation()) < 5) {
         int totalFilled = 0;
         for (MapInfo patternTile : rc.senseNearbyMapInfos(currentRuin.getMapLocation(), 8)) {
-          if (patternTile.getMark() != PaintType.EMPTY && (patternTile.getPaint() == PaintType.ENEMY_PRIMARY || patternTile.getPaint() == PaintType.ENEMY_SECONDARY)) {
+          if (patternTile.getMark() != PaintType.EMPTY && patternTile.getPaint() == PaintType.ENEMY_PRIMARY
+                  || patternTile.getMark() != PaintType.EMPTY && patternTile.getPaint() == PaintType.ENEMY_SECONDARY) {
             totalFilled++;
           }
         }
-        if (totalFilled == 24) {
+        if (totalFilled > 0) {
           previousRuins.add(currentRuin.getMapLocation());
-          previousRuinsRounds.add(10);
+          previousRuinsRounds.add(20);
           currentTask = SoldierTask.EXPLORING;
           currentRuin = null;
         }
