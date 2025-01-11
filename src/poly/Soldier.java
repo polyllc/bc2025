@@ -228,7 +228,7 @@ public class Soldier extends MovableUnit {
         currentTask = SoldierTask.EXPLORING;
         currentRuin = null;
       }
-      if (rc.canSenseRobotAtLocation(currentRuin.getMapLocation())) {
+      else if (rc.canSenseRobotAtLocation(currentRuin.getMapLocation())) {
         currentRuin = null;
         //directionGoing = rc.getLocation().directionTo(locationGoing).opposite();
         System.out.println("Cleared ruin");
@@ -236,11 +236,12 @@ public class Soldier extends MovableUnit {
       } else if (rc.getLocation().distanceSquaredTo(currentRuin.getMapLocation()) < 5) {
         int totalFilled = 0;
         for (MapInfo patternTile : rc.senseNearbyMapInfos(currentRuin.getMapLocation(), 8)) {
-          if (patternTile.getMark() != PaintType.EMPTY && (patternTile.getPaint() == PaintType.ENEMY_PRIMARY || patternTile.getPaint() == PaintType.ENEMY_SECONDARY)) {
+          if (patternTile.getMark() != PaintType.EMPTY && patternTile.getPaint() == PaintType.ENEMY_PRIMARY
+                  || patternTile.getMark() != PaintType.EMPTY && patternTile.getPaint() == PaintType.ENEMY_SECONDARY) {
             totalFilled++;
           }
         }
-        if (totalFilled == 24) {
+        if (totalFilled > 0) {
           previousRuins.add(currentRuin.getMapLocation());
           previousRuinsRounds.add(20);
           currentTask = SoldierTask.EXPLORING;
