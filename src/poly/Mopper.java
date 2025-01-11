@@ -1,9 +1,6 @@
 package poly;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
+import battlecode.common.*;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -22,7 +19,8 @@ public class Mopper extends MovableUnit {
     MOPPING_RUIN
   }
 
-  MopperTask currentTask = MopperTask.EXPLORING;
+  MopperTask currentTask;
+  //MopperTask currentTask = MopperTask.EXPLORING;
 
   @Override
   public void takeTurn() throws GameActionException {
@@ -30,7 +28,21 @@ public class Mopper extends MovableUnit {
     move();
   }
 
-  private void paint() {
+  private void paint() throws GameActionException {
+    if (rc.senseNearbyRuins(20).length > 0) {
+      currentTask = MopperTask.MOPPING_RUIN;
+      cleanUpRuin();
+    }
+    // if there are more than x amount of enemy robots, mop them
+    // note: number of robots nearby is subject to change
+    else if (rc.senseNearbyRobots(20, rc.getTeam().opponent()).length > 4) {
+      currentTask = MopperTask.MOPPING;
+      mop();
+    }
+    else {
+      currentTask = MopperTask.EXPLORING;
+    }
+
 
   }
 
@@ -43,24 +55,7 @@ public class Mopper extends MovableUnit {
     for (Direction dir : Direction.allDirections()) {
       if (rc.canMopSwing(dir)) {
         int enemyInDir = 0;
-        // need a list of directions (tile-wise) to check for enemies
-        switch (dir) {
-          case NORTH:
-            // if the robot in one of the north sweep directions is an enemy
-            enemyInDir = numEnemiesInDir(Direction.NORTH);
-            break;
-          case EAST:
-            enemyInDir = numEnemiesInDir(Direction.EAST);
-            break;
-          case SOUTH:
-            enemyInDir = numEnemiesInDir(Direction.SOUTH);
-            break;
-          case WEST:
-            enemyInDir = numEnemiesInDir(Direction.WEST);
-            break;
-          default:
-            break;
-        }
+        enemyInDir = numEnemiesInDir(dir);
 
         if (enemyInDir > mostEnemiesInDir) {
           mostEnemiesInDir = enemyInDir;
@@ -87,22 +82,7 @@ public class Mopper extends MovableUnit {
       Direction bestDirToSweep = null;
       for (Direction dir : Direction.allDirections()) {
         int numEnemyTiles = 0;
-        switch (dir) {
-          case NORTH:
-            numEnemyTiles = numEnemyTilesInDir(Direction.NORTH);
-            break;
-          case EAST:
-            numEnemyTiles = numEnemyTilesInDir(Direction.EAST);
-            break;
-          case SOUTH:
-            numEnemyTiles = numEnemyTilesInDir(Direction.SOUTH);
-            break;
-          case WEST:
-            numEnemyTiles = numEnemyTilesInDir(Direction.WEST);
-            break;
-          default:
-            break;
-        }
+        numEnemyTiles = numEnemyTilesInDir(dir);
 
         if (numEnemyTiles > mostEnemyTiles) {
           mostEnemyTiles = numEnemyTiles;
