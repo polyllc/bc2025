@@ -12,6 +12,8 @@ public abstract class Tower extends Unit {
 
   protected int spawnTurn = 0;
 
+  private int spawnedUnits = 0;
+
   protected Tower(RobotController rc) {
     super(rc);
     spawnTurn = rc.getRoundNum();
@@ -72,6 +74,7 @@ public abstract class Tower extends Unit {
       for (Direction dir : lib.directionsToMiddle(rc.getLocation())) {
         if (rc.canBuildRobot(getBestRobot(), rc.getLocation().add(dir))) {
           rc.buildRobot(getBestRobot(), rc.getLocation().add(dir));
+          spawnedUnits++;
         }
       }
     }
@@ -79,7 +82,10 @@ public abstract class Tower extends Unit {
 
   // todo, update
   private UnitType getBestRobot() {
-    return UnitType.SOLDIER;
+    if (rc.getRoundNum() < 50) {
+      return UnitType.SOLDIER;
+    }
+    return spawnedUnits % 2 == 0 ? UnitType.SOLDIER : UnitType.MOPPER;
   }
 }
 
