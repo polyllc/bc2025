@@ -487,4 +487,11 @@ public class Lib {
   }
 
 
+  public boolean isEnemyPaint(MapLocation loc) throws GameActionException {
+    return (rc.canSenseLocation(loc)
+            && rc.senseMapInfo(loc).getPaint() == PaintType.ENEMY_PRIMARY
+            && rc.senseMapInfo(loc).getPaint() == PaintType.ENEMY_SECONDARY);
+  }
+
+
 }

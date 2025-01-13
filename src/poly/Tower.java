@@ -26,8 +26,8 @@ public abstract class Tower extends Unit {
     if (rc.getRoundNum() < 2) {
 
       for (Direction dir : lib.directionsToMiddle(rc.getLocation())) {
-        if (rc.canBuildRobot(UnitType.SOLDIER, rc.getLocation().add(dir))) {
-          rc.buildRobot(UnitType.SOLDIER, rc.getLocation().add(dir));
+        if (rc.canBuildRobot(UnitType.MOPPER, rc.getLocation().add(dir))) {
+          rc.buildRobot(UnitType.MOPPER, rc.getLocation().add(dir));
         }
       }
     }
@@ -82,7 +82,7 @@ public abstract class Tower extends Unit {
 
   // todo, update
   private UnitType getBestRobot() {
-    if (rc.getRoundNum() < 50) {
+    if (rc.getRoundNum() < 10) {
       return UnitType.SOLDIER;
     }
     return spawnedUnits % 2 == 0 ? UnitType.SOLDIER : UnitType.MOPPER;
