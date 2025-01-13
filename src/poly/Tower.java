@@ -67,8 +67,8 @@ public abstract class Tower extends Unit {
   }
 
   private void build() throws GameActionException {
-
-    if (rc.getRoundNum() < 50 || rc.getMoney() > 1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 5)) {
+    System.out.println("cost to build: " + (1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)));
+    if (rc.getRoundNum() < 50 || rc.getMoney() > 1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)) {
       for (Direction dir : lib.directionsToMiddle(rc.getLocation())) {
         if (rc.canBuildRobot(getBestRobot(), rc.getLocation().add(dir))) {
           rc.buildRobot(getBestRobot(), rc.getLocation().add(dir));
