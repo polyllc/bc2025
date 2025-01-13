@@ -48,7 +48,7 @@ public abstract class MovableUnit extends Unit {
       }
     } else {
 
-      boolean goToResult = nav.goTo(locationGoing, false);
+      boolean goToResult = nav.goTo(locationGoing);
       lastMovement = goToResult; //if we need to save bytecode, well this is where we're saving it
       lastLocationGoing = locationGoing;
       if (!lastMovement) {
