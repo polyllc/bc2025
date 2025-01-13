@@ -286,7 +286,10 @@ public class Soldier extends MovableUnit {
 
      */
 
-    if (rc.getRoundNum() < 500) {
+    if (rc.getRoundNum() < rc.getMapWidth()) {
+      return UnitType.LEVEL_ONE_MONEY_TOWER;
+    }
+    else if (rc.getRoundNum() < 500) {
       return rng.nextInt(0, 2) == 0 ?
           UnitType.LEVEL_ONE_MONEY_TOWER : UnitType.LEVEL_ONE_PAINT_TOWER;
     }
