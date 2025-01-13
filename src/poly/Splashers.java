@@ -54,7 +54,7 @@ public class Splashers extends MovableUnit {
     for (Direction dir : Lib.directionsCenter) {
       if (rc.canSenseLocation(rc.getLocation().add(dir))) {
         MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
-        if (!currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation().add(dir))) {
+        if (!currentTile.getPaint().isAlly() && rc.canAttack(currentTile.getMapLocation())) {
           rc.attack(currentTile.getMapLocation());
           return true;
         }
@@ -64,7 +64,7 @@ public class Splashers extends MovableUnit {
     for (Direction dir : Lib.directionsCenter) {
       if (rc.canSenseLocation(rc.getLocation().add(dir).add(dir))) {
         MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
-        if (!currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation().add(dir))) {
+        if (!currentTile.getPaint().isAlly() && rc.canAttack(currentTile.getMapLocation())) {
           //above if should be lib.isEnemyPaint() when made
           rc.attack(currentTile.getMapLocation());
           return true;
@@ -80,13 +80,15 @@ public class Splashers extends MovableUnit {
     }
     //when new lib function is made, put all code in that
     if (!rc.senseMapInfo(rc.getLocation()).getPaint().isAlly()) {
-      rc.attack(rc.getLocation());
+      if (rc.canAttack(rc.getLocation())) {
+        rc.attack(rc.getLocation());
+      }
     }
 
     for (Direction dir : Lib.directionsCenter) {
       if (rc.canSenseLocation(rc.getLocation().add(dir).add(dir))) {
         MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
-        if (!currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation().add(dir))) {
+        if (!currentTile.getPaint().isAlly() && rc.canAttack(currentTile.getMapLocation())) {
           rc.attack(currentTile.getMapLocation());
         }
       }
@@ -95,7 +97,7 @@ public class Splashers extends MovableUnit {
     for (Direction dir : Lib.directionsCenter) {
       if (rc.canSenseLocation(rc.getLocation().add(dir))) {
         MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
-        if (!currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation().add(dir))) {
+        if (!currentTile.getPaint().isAlly() && rc.canAttack(currentTile.getMapLocation())) {
           rc.attack(currentTile.getMapLocation());
         }
       }

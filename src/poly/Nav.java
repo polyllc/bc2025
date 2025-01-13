@@ -15,15 +15,20 @@ public class Nav {
 
   boolean avoidEnemyPaint = false;
 
+  boolean avoidEnemyTowers = false;
+
+  private Lib lib;
+
 
 
   public Nav(RobotController robot){
     rc = robot;
+    lib = new Lib(robot);
   }
   //this is the navigation class that we create an object of for each robot to keep our nav code nice and neat
 
   public boolean tryMove(Direction dir) throws GameActionException {
-    if(rc.canMove(dir)){
+    if(rc.canMove(dir) && !enemyPaint(dir) && !enemyTower(dir)){
       rc.move(dir);
       return true;
     }
@@ -137,15 +142,28 @@ public class Nav {
   }
 
   private boolean enemyPaint(Direction dir) throws GameActionException {
-    return (avoidEnemyPaint && rc.canSenseLocation(rc.getLocation().add(dir))
-            && rc.senseMapInfo(rc.getLocation().add(dir)).getPaint() == PaintType.ENEMY_PRIMARY
-            && rc.senseMapInfo(rc.getLocation().add(dir)).getPaint() == PaintType.ENEMY_SECONDARY);
+    return (avoidEnemyPaint && rc.canSenseLocation(rc.getLocation().add(dir)))
+            && (rc.senseMapInfo(rc.getLocation().add(dir)).getPaint() == PaintType.ENEMY_PRIMARY
+            || rc.senseMapInfo(rc.getLocation().add(dir)).getPaint() == PaintType.ENEMY_SECONDARY);
   }
 
   private boolean enemyPaint(MapLocation loc) throws GameActionException {
-    return (avoidEnemyPaint && rc.canSenseLocation(loc)
-            && rc.senseMapInfo(loc).getPaint() == PaintType.ENEMY_PRIMARY
-            && rc.senseMapInfo(loc).getPaint() == PaintType.ENEMY_SECONDARY);
+    return (avoidEnemyPaint && rc.canSenseLocation(loc))
+            && (rc.senseMapInfo(loc).getPaint() == PaintType.ENEMY_PRIMARY
+            || rc.senseMapInfo(loc).getPaint() == PaintType.ENEMY_SECONDARY);
+  }
+
+  private boolean enemyTower(Direction dir) throws GameActionException {
+    if (avoidEnemyTowers) {
+      for (RobotInfo robot : rc.senseNearbyRobots()) {
+        if (robot.getTeam() == rc.getTeam().opponent()) {
+          if (lib.isTower(robot.getType())) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   boolean bugNavTo(MapLocation destination) throws GameActionException {
@@ -159,7 +177,7 @@ public class Nav {
     boolean noWalls = true;
     MapLocation currentLoc = rc.getLocation();
     for (Direction dir : Lib.directions)
-      if (!(rc.canMove(dir)) || enemyPaint(dir)) //|| rc.senseFlooding(currentLoc.add(dir))) maybe we change this to whatever those cloud things do
+      if (!(rc.canMove(dir)) || enemyPaint(dir) || enemyTower(dir)) //|| rc.senseFlooding(currentLoc.add(dir))) maybe we change this to whatever those cloud things do
         noWalls = false;
     if (noWalls) {
       useBugNav = false;
