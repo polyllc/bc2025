@@ -21,7 +21,7 @@ public class Nav {
 
 
 
-  public Nav(RobotController robot){
+  public Nav(RobotController robot) throws GameActionException {
     rc = robot;
     lib = new Lib(robot);
   }

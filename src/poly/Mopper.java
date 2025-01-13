@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class Mopper extends MovableUnit {
 
-  public Mopper(RobotController rc) {
+  public Mopper(RobotController rc) throws GameActionException {
     super(rc);
     currentTask = MopperTask.EXPLORING;
     directionGoing = rc.getLocation().directionTo(lib.center);

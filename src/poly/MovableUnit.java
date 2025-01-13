@@ -24,10 +24,12 @@ public abstract class MovableUnit extends Unit {
 
   protected List<MapLocation> towerLocations = new ArrayList<>();
 
+  protected List<MapLocation> paintTowerLocations = new ArrayList<>();
+
   protected MapLocation spawnedTower = Lib.noLoc;
 
 
-  public MovableUnit(RobotController rc) {
+  public MovableUnit(RobotController rc) throws GameActionException {
     super(rc);
     nav = new Nav(rc);
     for (RobotInfo robot : rc.senseNearbyRobots()) {
@@ -89,6 +91,9 @@ public abstract class MovableUnit extends Unit {
         if (lib.isTower(robot.getType())) {
           if (!towerLocations.contains(robot.getLocation())) {
             towerLocations.add(robot.getLocation());
+            if (lib.isPaintTower(robot.getType())) {
+              paintTowerLocations.add(robot.getLocation());
+            }
           }
         }
       }

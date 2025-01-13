@@ -1,6 +1,5 @@
 jessr
 - moppers
-- tower build order
 - keep bots away from each other
 
 quinny
@@ -8,6 +7,7 @@ quinny
 - splashers
   - make sure that they do not splash unfinished ruins\
   - explore ai should prioritize more empty spots
+  - splashing when already painted
 
 lukasz 
 - calculate the best MapLocation to paint, i.e. every maplocation has a value associated with it on how "valuable" it is to paint and how "safe" it is from enemies painting it
@@ -19,3 +19,6 @@ maciek
 - soldiers
 - explore ai should prioritize more empty spots
 - stay away from enemy towers
+- spawn less money towers somehow
+- soldiers shouldn't paint beneath themselves first ~50 rounds
+- spawn nothing between rounds 5-40ish
