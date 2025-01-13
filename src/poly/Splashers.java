@@ -41,6 +41,10 @@ public class Splashers extends MovableUnit {
 
     move();
     paint();
+
+    if (rc.getPaint() < 51) {
+      locationGoing = spawnedTower;
+    }
   }
 
   private void paint() throws GameActionException {
@@ -108,6 +112,7 @@ public class Splashers extends MovableUnit {
   protected void move() throws GameActionException {
     if (currentTask == SplasherTask.EXPLORE) {
       explore();
+      locationGoing = Lib.noLoc;
     }
     super.move();
   }
