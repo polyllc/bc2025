@@ -9,6 +9,16 @@ public class Splashers extends MovableUnit {
 
   public Splashers(RobotController rc) {
     super(rc);
+    directionGoing = rc.getLocation().directionTo(lib.center);
+    if (rc.getID() % 2 == 0) {
+      directionGoing = directionGoing.rotateLeft();
+    }
+    else {
+      directionGoing = directionGoing.rotateRight();
+    }
+    if (rc.getID() % 3 == 0) {
+      directionGoing = rc.getLocation().directionTo(lib.center);
+    }
   }
 
   public enum SplasherTask {
