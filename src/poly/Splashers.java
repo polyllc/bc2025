@@ -7,7 +7,7 @@ import battlecode.common.RobotController;
 
 public class Splashers extends MovableUnit {
 
-  public Splashers(RobotController rc) {
+  public Splashers(RobotController rc) throws GameActionException {
     super(rc);
     directionGoing = rc.getLocation().directionTo(lib.center);
     if (rc.getID() % 2 == 0) {

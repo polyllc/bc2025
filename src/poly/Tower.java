@@ -14,13 +14,12 @@ public abstract class Tower extends Unit {
 
   private int spawnedUnits = 0;
 
-  protected Tower(RobotController rc) {
+  protected Tower(RobotController rc) throws GameActionException {
     super(rc);
     spawnTurn = rc.getRoundNum();
   }
 
   public void takeTurn() throws GameActionException {
-
     attack();
 
     if (rc.getRoundNum() < 2) {

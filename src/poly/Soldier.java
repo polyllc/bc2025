@@ -2,6 +2,7 @@ package poly;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -42,7 +43,7 @@ public class Soldier extends MovableUnit {
   List<Integer> previousRuinsRounds = new ArrayList<Integer>();
 
 
-  public Soldier(RobotController rc) {
+  public Soldier(RobotController rc) throws GameActionException {
     super(rc);
     directionGoing = rc.getLocation().directionTo(lib.center);
     if (rc.getID() % 2 == 0) {
@@ -130,8 +131,7 @@ public class Soldier extends MovableUnit {
     }
     else {
       if (currentTask == SoldierTask.PAINTING_RUIN) {
-        currentTask = SoldierTask.EXPLORING;
-        locationGoing = Lib.noLoc;
+        resetFromPaintingRuin();
       }
     }
     // Try to paint beneath us as we walk to avoid paint penalties.
@@ -155,6 +155,11 @@ public class Soldier extends MovableUnit {
 //        }
 //      }
 //    }
+  }
+
+  private void resetFromPaintingRuin() {
+    currentTask = SoldierTask.EXPLORING;
+    locationGoing = Lib.noLoc;
   }
 
   private void paintRuin() throws GameActionException {
@@ -261,8 +266,11 @@ public class Soldier extends MovableUnit {
   }
 
   private void goTowardsEmptySpots() {
-    if (currentTask == SoldierTask.EXPLORING) {
+    if (currentTask == SoldierTask.EXPLORING && rc.getRoundNum() > 100) {
       MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
+      Arrays.sort(nearbyTiles, (a, b) -> {
+        return a.getMapLocation().distanceSquaredTo(lib.center) - b.getMapLocation().distanceSquaredTo(lib.center);
+      });
       for (MapInfo tile : nearbyTiles) {
         if (tile.isPassable()) {
           if (tile.getPaint() == PaintType.EMPTY) { // todo, make this more random
@@ -287,11 +295,13 @@ public class Soldier extends MovableUnit {
 
      */
 
+
+
     if (rc.getRoundNum() < rc.getMapWidth()) {
       return UnitType.LEVEL_ONE_MONEY_TOWER;
     }
     else if (rc.getRoundNum() < 500) {
-      return rng.nextInt(0, 2) == 0 ?
+      return rc.getRoundNum() % 2 == 0 ?
           UnitType.LEVEL_ONE_MONEY_TOWER : UnitType.LEVEL_ONE_PAINT_TOWER;
     }
     return rng.nextInt(0, 3) == 0 ? UnitType.LEVEL_ONE_DEFENSE_TOWER :

@@ -18,11 +18,14 @@ public class Lib {
 
   static MapLocation noLoc = new MapLocation(256,256);
 
-  public Lib(RobotController robot){
+  MapLocation oppositeMapLocation;
+
+  public Lib(RobotController robot) throws GameActionException {
     rc = robot;
     roundNum = rc.getRoundNum();
     lastRoundNum = roundNum--;
     center = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
+    oppositeMapLocation = rotationalCalc(rc.getLocation());
   }
   //pretty much any useful function or variables go here
   static final Direction[] directions = {
@@ -484,6 +487,15 @@ public class Lib {
    */
   public boolean isTower(UnitType unit) {
     return !(unit == UnitType.SOLDIER || unit == UnitType.MOPPER || unit == UnitType.SPLASHER);
+  }
+
+  /**
+   * Checks if its a paint tower regardless of upgrade
+   * @param unit unittype
+   * @return bool
+   */
+  public boolean isPaintTower(UnitType unit) {
+    return unit == UnitType.LEVEL_ONE_PAINT_TOWER || unit == UnitType.LEVEL_TWO_PAINT_TOWER || unit == UnitType.LEVEL_THREE_PAINT_TOWER;
   }
 
 
