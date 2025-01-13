@@ -23,7 +23,7 @@ public class Splashers extends MovableUnit {
 
   public enum SplasherTask {
     EXPLORE,
-    SPLASH_ENEMIES,
+    GOING_BACK_TO_TOWER,
     PAINT_WORLD
   }
 
@@ -44,6 +44,12 @@ public class Splashers extends MovableUnit {
 
     if (rc.getPaint() < 51) {
       locationGoing = spawnedTower;
+      currentTask = SplasherTask.GOING_BACK_TO_TOWER;
+    }
+
+    if (rc.getLocation().distanceSquaredTo(spawnedTower) < 4) {
+      rc.transferPaint(spawnedTower, 150);
+      currentTask = SplasherTask.EXPLORE;
     }
   }
 
