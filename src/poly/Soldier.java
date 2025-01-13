@@ -274,7 +274,7 @@ public class Soldier extends MovableUnit {
   }
 
   private UnitType getBestTowerToMark() {
-    if (rc.getRoundNum() < 60) {
+    if (rc.getRoundNum() < 20) {
       return UnitType.LEVEL_ONE_MONEY_TOWER;
     }
     else if (rc.getRoundNum() < 400) {
