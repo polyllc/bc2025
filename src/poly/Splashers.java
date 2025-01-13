@@ -1,9 +1,6 @@
 package poly;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapInfo;
-import battlecode.common.RobotController;
+import battlecode.common.*;
 
 import java.util.List;
 
@@ -26,10 +23,25 @@ public class Splashers extends MovableUnit {
   public enum SplasherTask {
     EXPLORE,
     GOING_BACK_TO_TOWER,
+    GOING_TO_PAINT_TOWER,
     PAINT_WORLD
   }
 
   SplasherTask currentTask = SplasherTask.EXPLORE;
+
+  MapLocation pTower;
+
+  private MapLocation getPTower() {
+    for (MapLocation tower : towerLocations) {
+      //check if the tower is a paint tower, if so make that
+      //the location going for the splasher
+      //if tower is paint tower, set currentTask to going to paint tower
+      //because if there are no paint towers in the game (a real early game situation)
+      //it will automatically go back to own tower and never seek a paint tower which it
+      //should every turn untl it finds one
+    }
+    return null;
+  }
 
 
   @Override
@@ -48,15 +60,16 @@ public class Splashers extends MovableUnit {
     }
 
 
-
-
     if (rc.getPaint() < 51) {
       locationGoing = spawnedTower;
       currentTask = SplasherTask.GOING_BACK_TO_TOWER;
     }
 
     if (rc.getLocation().distanceSquaredTo(spawnedTower) < 4) {
-      rc.transferPaint(spawnedTower, 150);
+      rc.transferPaint(spawnedTower, 50);
+    }
+
+    if (currentTask == SplasherTask.GOING_BACK_TO_TOWER && rc.getPaint() > 199) {
       currentTask = SplasherTask.EXPLORE;
     }
   }
@@ -82,7 +95,7 @@ public class Splashers extends MovableUnit {
     for (Direction dir : Lib.directionsCenter) {
       if (rc.canSenseLocation(rc.getLocation().add(dir).add(dir))) {
         MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
-        if (currentTile.isPassable() && !currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation().add(dir))) {
+        if (!currentTile.hasRuin() && currentTile.isPassable() && !currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation().add(dir))) {
           rc.attack(currentTile.getMapLocation());
         }
       }
@@ -91,7 +104,7 @@ public class Splashers extends MovableUnit {
     for (Direction dir : Lib.directionsCenter) {
       if (rc.canSenseLocation(rc.getLocation().add(dir))) {
         MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
-        if (currentTile.isPassable() && !currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation().add(dir))) {
+        if (!currentTile.hasRuin() && currentTile.isPassable() && !currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation().add(dir))) {
           rc.attack(currentTile.getMapLocation());
         }
       }
