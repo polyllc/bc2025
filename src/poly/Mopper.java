@@ -145,25 +145,31 @@ public class Mopper extends MovableUnit {
   // cleans up enemy tiles around ruins
   private void cleanUpRuin() throws GameActionException {
 
+    int paintCounter = 0;
     for (MapLocation ruinInfo : rc.senseNearbyRuins(-1)) {
       for (MapInfo loc : rc.senseNearbyMapInfos(ruinInfo)) {
         if (loc.getPaint() == PaintType.ENEMY_PRIMARY || loc.getPaint() == PaintType.ENEMY_SECONDARY) {
+          paintCounter++;
           if (rc.canSenseRobotAtLocation(locationGoing) && !rc.senseRobotAtLocation(locationGoing).getTeam().equals(rc.getTeam())) {
             if (rc.canMopSwing(rc.getLocation().directionTo(locationGoing))) {
               rc.mopSwing(rc.getLocation().directionTo(locationGoing));
             }
           }
+
             locationGoing = loc.getMapLocation();
             if (rc.canAttack(locationGoing)) {
               rc.attack(locationGoing);
+              paintCounter--;
             }
-            return;
 
         }
 
       }
     }
-    currentTask = MopperTask.EXPLORING;
+    if (paintCounter == 0) {
+      currentTask = MopperTask.EXPLORING;
+    }
+
 
     /*
     // if rc is on a ruin, sweep in direction that has the most enemy tiles
