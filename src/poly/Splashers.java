@@ -5,6 +5,8 @@ import battlecode.common.GameActionException;
 import battlecode.common.MapInfo;
 import battlecode.common.RobotController;
 
+import java.util.List;
+
 public class Splashers extends MovableUnit {
 
   public Splashers(RobotController rc) {
@@ -40,7 +42,13 @@ public class Splashers extends MovableUnit {
         + " | dG: " + directionGoing);
 
     move();
-    paint();
+
+    if (currentTask != SplasherTask.GOING_BACK_TO_TOWER) {
+      paint();
+    }
+
+
+
 
     if (rc.getPaint() < 51) {
       locationGoing = spawnedTower;
