@@ -35,6 +35,8 @@ public abstract class Tower extends Unit {
       build();
     }
 
+    upgrade();
+
   }
 
   private void attack() throws GameActionException {
@@ -90,6 +92,16 @@ public abstract class Tower extends Unit {
     }
     return spawnedUnits % 3 == 0 ? UnitType.SOLDIER : (spawnedUnits % 2 == 0 ? UnitType.MOPPER : UnitType.SPLASHER);
   }
+
+  private void upgrade() throws GameActionException {
+    if (rc.getMoney() > 3000) {
+      if (rc.canUpgradeTower(rc.getLocation())) {
+        rc.upgradeTower(rc.getLocation());
+      }
+    }
+  }
+
+
 }
 
 //TODO: AoE

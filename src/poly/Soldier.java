@@ -55,6 +55,7 @@ public class Soldier extends MovableUnit {
       directionGoing = rc.getLocation().directionTo(lib.center);
     }
     nav.avoidEnemyPaint = true;
+    nav.avoidEnemyTowers = true;
     // todo, the tower that spawn this robot might have an objective
     //  which may be in a message sent on over
   }
