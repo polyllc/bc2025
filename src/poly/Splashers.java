@@ -23,7 +23,7 @@ public class Splashers extends MovableUnit {
 
   public enum SplasherTask {
     EXPLORE,
-    SPLASH_ENEMIES,
+    GOING_BACK_TO_TOWER,
     PAINT_WORLD
   }
 
@@ -41,6 +41,16 @@ public class Splashers extends MovableUnit {
 
     move();
     paint();
+
+    if (rc.getPaint() < 51) {
+      locationGoing = spawnedTower;
+      currentTask = SplasherTask.GOING_BACK_TO_TOWER;
+    }
+
+    if (rc.getLocation().distanceSquaredTo(spawnedTower) < 4) {
+      rc.transferPaint(spawnedTower, 150);
+      currentTask = SplasherTask.EXPLORE;
+    }
   }
 
   private void paint() throws GameActionException {
@@ -110,6 +120,7 @@ public class Splashers extends MovableUnit {
   protected void move() throws GameActionException {
     if (currentTask == SplasherTask.EXPLORE) {
       explore();
+      locationGoing = Lib.noLoc;
     }
     super.move();
   }
