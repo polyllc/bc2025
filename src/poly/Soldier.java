@@ -274,6 +274,7 @@ public class Soldier extends MovableUnit {
   }
 
   private UnitType getBestTowerToMark() {
+    /*
     if (rc.getRoundNum() < rc.getMapWidth()) {
       return UnitType.LEVEL_ONE_MONEY_TOWER;
     }
@@ -282,6 +283,15 @@ public class Soldier extends MovableUnit {
     }
     return rng.nextInt(0, 2) == 0 ?
             UnitType.LEVEL_ONE_MONEY_TOWER : UnitType.LEVEL_ONE_PAINT_TOWER;
+
+     */
+
+    if (rc.getRoundNum() < 500) {
+      return rng.nextInt(0, 2) == 0 ?
+          UnitType.LEVEL_ONE_MONEY_TOWER : UnitType.LEVEL_ONE_PAINT_TOWER;
+    }
+    return rng.nextInt(0, 3) == 0 ? UnitType.LEVEL_ONE_DEFENSE_TOWER :
+        (rng.nextInt(0, 2) == 0 ? UnitType.LEVEL_ONE_MONEY_TOWER : UnitType.LEVEL_ONE_PAINT_TOWER);
   }
 
 }

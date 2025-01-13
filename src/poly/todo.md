@@ -5,7 +5,6 @@ jessr
 
 quinny
 - grind
-- AoE/Single attack formula
 - splashers
   - make sure that they do not splash unfinished ruins\
   - explore ai should prioritize more empty spots
