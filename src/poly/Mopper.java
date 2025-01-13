@@ -29,7 +29,8 @@ public class Mopper extends MovableUnit {
     EXPLORING,
     MOPPING,
     MOPPING_RUIN,
-    MOPPING_ENEMIES
+    MOPPING_ENEMIES,
+    FOLLOW
   }
 
   MopperTask currentTask = MopperTask.EXPLORING;
@@ -53,6 +54,9 @@ public class Mopper extends MovableUnit {
     else if (currentTask == MopperTask.MOPPING_ENEMIES) {
       mopEnemies();
     }
+    else if (currentTask == MopperTask.FOLLOW) {
+      follow();
+    }
 
     move();
 
@@ -61,7 +65,14 @@ public class Mopper extends MovableUnit {
   @Override
   protected void move() throws GameActionException {
     if (currentTask == MopperTask.EXPLORING) {
-      explore();
+      if (rc.getRoundNum() < 90) {
+        currentTask = MopperTask.FOLLOW;
+        //follow();
+        //locationGoing = nav.minPaintLoss(rc.getLocation());
+      }
+      else {
+        explore();
+      }
     }
     super.move();
   }
@@ -95,6 +106,21 @@ public class Mopper extends MovableUnit {
       currentTask = MopperTask.EXPLORING;
   }
 
+  // the moppers will follow soliders
+  private void follow() throws GameActionException {
+    for (RobotInfo botInfo: rc.senseNearbyRobots(-1, rc.getTeam())) {
+      if (botInfo.type == UnitType.SOLDIER) {
+        directionGoing = rc.getLocation().directionTo(botInfo.location);
+        return;
+      }
+      else {
+        nav.minPaintLoss(rc.getLocation());
+        return;
+      }
+    }
+  }
+
+
   // mops an enemy tile
   private void mopTile() throws GameActionException {
     // mops first available tile
@@ -106,19 +132,6 @@ public class Mopper extends MovableUnit {
       }
     }
 
-    /*
-    int paintCounter = 0;
-    for (MapInfo tile: rc.senseNearbyMapInfos()) {
-      if (tile.getPaint() == PaintType.ENEMY_PRIMARY || tile.getPaint() == PaintType.ENEMY_SECONDARY) {
-        paintCounter++;
-      }
-    }
-
-    if (paintCounter == 0) {
-      currentTask = MopperTask.EXPLORING;
-    }
-
-     */
   }
 
   // mops nearby enemies in the best direction with most enemies
