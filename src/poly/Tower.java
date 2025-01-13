@@ -85,7 +85,7 @@ public abstract class Tower extends Unit {
     if (rc.getRoundNum() < 50) {
       return UnitType.SOLDIER;
     }
-    return spawnedUnits % 2 == 0 ? UnitType.SOLDIER : UnitType.MOPPER;
+    return spawnedUnits % 3 == 0 ? UnitType.SOLDIER : (spawnedUnits % 2 == 0 ? UnitType.MOPPER : UnitType.SPLASHER);
   }
 }
 
