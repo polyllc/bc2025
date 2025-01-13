@@ -7,6 +7,8 @@ quinny
 - grind
 - AoE/Single attack formula
 - splashers
+  - make sure that they do not splash unfinished ruins\
+  - explore ai should prioritize more empty spots
 
 lukasz 
 - calculate the best MapLocation to paint, i.e. every maplocation has a value associated with it on how "valuable" it is to paint and how "safe" it is from enemies painting it
@@ -15,8 +17,5 @@ lukasz
 
 maciek
 - idk if you did this already but can you add my minPaintLoss move function to whatever you need (it's in Nav), thanks - Jess
-- movableunit exploration
 - soldiers
-  - make sure that they eventually build a tower
-  - come back later to see if moppers did their thing
-  - towers that should spawn are the ones that are closest to the enemy towers
+- explore ai should prioritize more empty spots

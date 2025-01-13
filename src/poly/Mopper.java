@@ -22,6 +22,7 @@ public class Mopper extends MovableUnit {
     if (rc.getID() % 3 == 0) {
       directionGoing = rc.getLocation().directionTo(lib.center);
     }
+    nav.avoidEnemyPaint = true;
   }
 
   public enum MopperTask {
