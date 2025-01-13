@@ -40,7 +40,9 @@ public class Mopper extends MovableUnit {
     rc.setIndicatorString("lG: " + locationGoing.toString()
         + " | cT: " + currentTask
         + " | dG: " + directionGoing);
-    setCurrentTask();
+    if (currentTask == MopperTask.EXPLORING) {
+      setCurrentTask();
+    }
 
     if (currentTask == MopperTask.MOPPING) {
       mopTile();
@@ -65,26 +67,32 @@ public class Mopper extends MovableUnit {
   }
 
   private void setCurrentTask() throws GameActionException {
-    if (rc.senseNearbyRuins(-1).length > 0) {
-      //currentTask = MopperTask.MOPPING_RUIN;
-      //cleanUpRuin();
-    }
-    // if there are more than x amount of enemy robots, mop them
-    // note: number of robots nearby is subject to change
-    else if (rc.senseNearbyRobots(20, rc.getTeam().opponent()).length > 4) {
-      //currentTask = MopperTask.MOPPING_ENEMIES;
-      //mopEnemies();
-    }
-    //else {
-      for (MapInfo loc : rc.senseNearbyMapInfos()) {
+
+    for (MapLocation ruinInfo : rc.senseNearbyRuins(-1)) {
+      for (MapInfo loc : rc.senseNearbyMapInfos(ruinInfo, 8)) {
         if (loc.getPaint() == PaintType.ENEMY_PRIMARY || loc.getPaint() == PaintType.ENEMY_SECONDARY) {
-          locationGoing = loc.getMapLocation();
-          currentTask = MopperTask.MOPPING;
+          locationGoing = ruinInfo;
+          currentTask = MopperTask.MOPPING_RUIN;
+          return;
         }
       }
-    //}
+    }
 
+    RobotInfo[] robotInfos = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+    if (robotInfos.length > 0) {
+      locationGoing = robotInfos[0].getLocation();
+      currentTask = MopperTask.MOPPING_ENEMIES;
+      return;
+    }
 
+    for (MapInfo loc : rc.senseNearbyMapInfos()) {
+      if (loc.getPaint() == PaintType.ENEMY_PRIMARY || loc.getPaint() == PaintType.ENEMY_SECONDARY) {
+        locationGoing = loc.getMapLocation();
+        currentTask = MopperTask.MOPPING;
+        return;
+      }
+    }
+      currentTask = MopperTask.EXPLORING;
   }
 
   // mops an enemy tile
@@ -97,138 +105,157 @@ public class Mopper extends MovableUnit {
         currentTask = MopperTask.EXPLORING;
       }
     }
+
+    /*
+    int paintCounter = 0;
+    for (MapInfo tile: rc.senseNearbyMapInfos()) {
+      if (tile.getPaint() == PaintType.ENEMY_PRIMARY || tile.getPaint() == PaintType.ENEMY_SECONDARY) {
+        paintCounter++;
+      }
+    }
+
+    if (paintCounter == 0) {
+      currentTask = MopperTask.EXPLORING;
+    }
+
+     */
   }
 
   // mops nearby enemies in the best direction with most enemies
   // if there are ties, chooses the first direction
   private void mopEnemies() throws GameActionException {
-    int mostEnemiesInDir = 0;
-    Direction bestDirToSweep = null;
-
-    for (Direction dir : Direction.cardinalDirections()) {
-      if (rc.canMopSwing(dir)) {
-        int enemyInDir = 0;
-        enemyInDir = numEnemiesInDir(dir);
-
-        if (enemyInDir > mostEnemiesInDir) {
-          mostEnemiesInDir = enemyInDir;
-          bestDirToSweep = dir;
-        }
-
-      }
+    Direction bestDir = numEnemiesInDir();
+    rc.mopSwing(bestDir);
+    if (rc.senseNearbyRobots(-1, rc.getTeam().opponent()).length == 0) {
+      currentTask = MopperTask.EXPLORING;
     }
-    // if there is a best direction, sweep
-    // if not, do nothing
-    if (bestDirToSweep != null) {
-      rc.mopSwing(bestDirToSweep);
-    }
+
   }
 
 
   // cleans up enemy tiles around ruins
-  // assumes that rc is near a ruin or is moving towards one
   private void cleanUpRuin() throws GameActionException {
 
-    // if rc is on a ruin, sweep in direction that has the most enemy tiles
-    if (rc.senseMapInfo(rc.getLocation()).hasRuin()) {
-      int mostEnemyTiles = 0;
-      Direction bestDirToSweep = null;
+    int paintCounter = 0;
+    for (MapLocation ruinInfo : rc.senseNearbyRuins(-1)) {
+      for (MapInfo loc : rc.senseNearbyMapInfos(ruinInfo)) {
+        if (loc.getPaint() == PaintType.ENEMY_PRIMARY || loc.getPaint() == PaintType.ENEMY_SECONDARY) {
+          paintCounter++;
 
-      for (Direction dir : Direction.cardinalDirections()) {
-        int numEnemyTiles = 0;
-        numEnemyTiles = numEnemyTilesInDir(dir);
+          locationGoing = loc.getMapLocation();
 
-        if (numEnemyTiles > mostEnemyTiles) {
-          mostEnemyTiles = numEnemyTiles;
-          bestDirToSweep = dir;
+          if (rc.canAttack(locationGoing)) {
+            rc.attack(locationGoing);
+            paintCounter--;
+          }
+
         }
-      }
-      if (bestDirToSweep != null) {
-        rc.mopSwing(bestDirToSweep);
-      }
-    } else {
-      // if rc is in range of a ruin, sweep direction closest to one
-      Direction dirToClean = null;
-      int numEnemyTiles = 0;
-      for (MapLocation ruin : rc.senseNearbyRuins(-1)) {
-        int thisNumEnemyTiles = 0;
-        Direction dirToRuin = rc.getLocation().directionTo(ruin);
 
-        // look at each ruin and count how many enemy paint tiles are there
-        // sweep in direction of the ruin that has the most enemy tiles around
-        thisNumEnemyTiles = numEnemyTilesInDir(dirToRuin);
+      }
+    }
+    if (paintCounter == 0) {
+      currentTask = MopperTask.EXPLORING;
+    }
 
-        boolean cardinal = false;
-        // checks to see if it's a cardinal direction
-        for (Direction dir: Direction.cardinalDirections()) {
-          if (dirToRuin.equals(dir)) {
-            cardinal = true;
+
+  }
+
+  // counts how many enemy tiles are around and returns direction that has the most
+  private Direction numEnemyTiles() throws GameActionException {
+
+    int[] enemyTilesInDirection = {0, 0, 0, 0};
+    // n e s w
+
+    for (Direction d : Lib.directions) {
+      if (rc.senseMapInfo(rc.getLocation().add(d)).getPaint() == PaintType.ENEMY_PRIMARY ||
+          rc.senseMapInfo(rc.getLocation().add(d)).getPaint() == PaintType.ENEMY_SECONDARY) {
+        switch (d) {
+          case NORTHEAST:
+          case NORTH:
+          case NORTHWEST:
+            enemyTilesInDirection[0]++;
             break;
-          }
+          case SOUTH:
+          case SOUTHWEST:
+          case SOUTHEAST:
+            enemyTilesInDirection[2]++;
+            break;
+          case EAST:
+            enemyTilesInDirection[1]++;
+            break;
+          case WEST:
+            enemyTilesInDirection[3]++;
+            break;
+          default:
+            break;
         }
-        if (!cardinal) {
-          if (dirToRuin.equals(Direction.NORTHEAST) || dirToRuin.equals(Direction.SOUTHEAST)) {
-            dirToRuin = Direction.EAST;
-          }
-          else {
-            dirToRuin = Direction.WEST;
-          }
-        }
-
-        if (thisNumEnemyTiles > numEnemyTiles) {
-          dirToClean = dirToRuin;
-          numEnemyTiles = thisNumEnemyTiles;
-        }
-
-      }
-
-      if (dirToClean != null) {
-        //System.out.println("dirToClean: " + dirToClean);
-        rc.mopSwing(dirToClean);
       }
     }
+
+    int dir = 0;
+    int maxEnemies = 0;
+    for (int i = 0; i < enemyTilesInDirection.length; i++) {
+      if (enemyTilesInDirection[i] > maxEnemies) {
+        dir = i;
+        maxEnemies = enemyTilesInDirection[i];
+      }
+    }
+
+    return switch (dir) {
+      case 0 -> Direction.NORTH;
+      case 1 -> Direction.EAST;
+      case 2 -> Direction.SOUTH;
+      default -> Direction.WEST;
+    };
+
   }
 
-  // counts how many enemy tiles are around in the given cardinal direction
-  private int numEnemyTilesInDir(Direction dir) throws GameActionException {
-    Map<Direction, List<Direction>> dirMap = new HashMap<Direction, List<Direction>>();
-    dirMap.put(Direction.NORTH, Arrays.asList(Direction.NORTHEAST, Direction.NORTH, Direction.NORTHWEST));
-    dirMap.put(Direction.EAST, Arrays.asList(Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST));
-    dirMap.put(Direction.SOUTH, Arrays.asList(Direction.SOUTHWEST, Direction.SOUTH, Direction.SOUTHEAST));
-    dirMap.put(Direction.WEST, Arrays.asList(Direction.NORTHWEST, Direction.WEST, Direction.SOUTHWEST));
-    dirMap.put(Direction.NORTHEAST, Arrays.asList(Direction.NORTHEAST, Direction.NORTH, Direction.NORTHWEST));
-    dirMap.put(Direction.NORTHWEST, Arrays.asList(Direction.NORTHEAST, Direction.NORTH, Direction.NORTHWEST));
-    dirMap.put(Direction.SOUTHEAST, Arrays.asList(Direction.SOUTHWEST, Direction.SOUTH, Direction.SOUTHEAST));
-    dirMap.put(Direction.SOUTHWEST, Arrays.asList(Direction.SOUTHWEST, Direction.SOUTH, Direction.SOUTHEAST));
+  // counts how many enemy bots there are and returns direction with most
+  private Direction numEnemiesInDir() throws GameActionException {
 
+    int[] enemyInDirection = {0, 0, 0, 0};
+    // n e s w
 
-
-    int numEnemyTiles = 0;
-    for (Direction dirToCheck: dirMap.get(dir)) {
-      if (!rc.senseMapInfo(rc.getLocation().add(dir)).getPaint().isAlly()) {
-        numEnemyTiles++;
+    for (Direction d : Lib.directions) {
+      if (rc.senseMapInfo(rc.getLocation().add(d)).getPaint() == PaintType.ENEMY_PRIMARY ||
+          rc.senseMapInfo(rc.getLocation().add(d)).getPaint() == PaintType.ENEMY_SECONDARY) {
+        switch (d) {
+          case NORTHEAST:
+          case NORTH:
+          case NORTHWEST:
+            enemyInDirection[0]++;
+            break;
+          case SOUTH:
+          case SOUTHWEST:
+          case SOUTHEAST:
+            enemyInDirection[2]++;
+            break;
+          case EAST:
+            enemyInDirection[1]++;
+            break;
+          case WEST:
+            enemyInDirection[3]++;
+            break;
+          default:
+            break;
+        }
       }
     }
-    return numEnemyTiles;
-  }
 
-  // counts how many enemy bots there are in a given direction
-  private int numEnemiesInDir(Direction dir) throws GameActionException {
-    Map<Direction, List<Direction>> dirMap = new HashMap<Direction, List<Direction>>();
-    dirMap.put(Direction.NORTH, Arrays.asList(Direction.NORTHEAST, Direction.NORTH, Direction.NORTHWEST));
-    dirMap.put(Direction.EAST, Arrays.asList(Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST));
-    dirMap.put(Direction.SOUTH, Arrays.asList(Direction.SOUTHWEST, Direction.SOUTH, Direction.SOUTHEAST));
-    dirMap.put(Direction.WEST, Arrays.asList(Direction.NORTHWEST, Direction.WEST, Direction.SOUTHWEST));
-
-
-
-    int numEnemies = 0;
-    for (Direction dirToCheck: dirMap.get(dir)) {
-      if (!rc.senseRobotAtLocation(rc.getLocation().add(dir)).getTeam().
-          equals(rc.getTeam())) {
-        numEnemies++;
+    int dir = 0;
+    int maxEnemies = 0;
+    for (int i = 0; i < enemyInDirection.length; i++) {
+      if (enemyInDirection[i] > maxEnemies) {
+        dir = i;
+        maxEnemies = enemyInDirection[i];
       }
     }
-    return numEnemies;
+
+    return switch (dir) {
+      case 0 -> Direction.NORTH;
+      case 1 -> Direction.EAST;
+      case 2 -> Direction.SOUTH;
+      default -> Direction.WEST;
+    };
   }
 }
