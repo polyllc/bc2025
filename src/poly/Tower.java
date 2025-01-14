@@ -30,7 +30,10 @@ public abstract class Tower extends Unit {
         }
       }
     }
-    else {
+    else if (rc.getRoundNum() > 2 && rc.getRoundNum() < 6){
+      build();
+    }
+    else if (rc.getRoundNum() > 30) {
       build();
     }
 
@@ -71,7 +74,7 @@ public abstract class Tower extends Unit {
 
   private void build() throws GameActionException {
     System.out.println("cost to build: " + (1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)));
-    if (rc.getRoundNum() < 50 || rc.getMoney() > 1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)) {
+    if (rc.getRoundNum() < 65 || rc.getMoney() > 1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)) {
       for (Direction dir : lib.directionsToMiddle(rc.getLocation())) {
         if (rc.canBuildRobot(getBestRobot(), rc.getLocation().add(dir))) {
           rc.buildRobot(getBestRobot(), rc.getLocation().add(dir));
@@ -83,7 +86,7 @@ public abstract class Tower extends Unit {
 
   // todo, update
   private UnitType getBestRobot() {
-    if (rc.getRoundNum() < 10) {
+    if (rc.getRoundNum() < 100) {
       return UnitType.SOLDIER;
     }
     else if (rc.getRoundNum() < 40) {

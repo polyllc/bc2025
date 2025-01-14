@@ -46,15 +46,25 @@ public class Soldier extends MovableUnit {
   public Soldier(RobotController rc) throws GameActionException {
     super(rc);
     directionGoing = rc.getLocation().directionTo(lib.center);
-    if (rc.getID() % 2 == 0) {
+    if (rc.getRoundNum() % 2 == 0) {
       directionGoing = directionGoing.rotateLeft();
     }
     else {
       directionGoing = directionGoing.rotateRight();
     }
-    if (rc.getID() % 3 == 0) {
+    if (rc.getRoundNum() % 3 == 0) {
       directionGoing = rc.getLocation().directionTo(lib.center);
     }
+
+    if (rc.getRoundNum() > 100) {
+      if (rc.getRoundNum() % 4 == 2) {
+        directionGoing = directionGoing.rotateLeft();
+      }
+      else if (rc.getRoundNum() % 4 == 1) {
+        directionGoing = directionGoing.rotateRight();
+      }
+    }
+
     nav.avoidEnemyPaint = true;
     nav.avoidEnemyTowers = true;
     // todo, the tower that spawn this robot might have an objective
@@ -92,7 +102,7 @@ public class Soldier extends MovableUnit {
     }
     checkToClearRuin();
 
-    if (rc.getPaint() < 0 && currentTask != SoldierTask.GETTING_MORE_PAINT) {
+    if (rc.getPaint() < 20 && currentTask != SoldierTask.GETTING_MORE_PAINT) {
       previousTask = currentTask;
       previousLocationGoing = locationGoing;
       currentTask = SoldierTask.GETTING_MORE_PAINT;
@@ -100,14 +110,24 @@ public class Soldier extends MovableUnit {
     }
 
     if (currentTask == SoldierTask.GETTING_MORE_PAINT) {
+      senseBetterTowersToGetPaint();
       if (rc.getLocation().distanceSquaredTo(locationGoing) < 3) {
         RobotInfo towerInfo = rc.senseRobotAtLocation(locationGoing);
-        int max = Math.max(-50, -(200 - rc.getPaint()));
+        int max = towerInfo.getPaintAmount() < Math.clamp(90 - rc.getRoundNum() / 3, 40, 90) ? -Math.clamp(90 - rc.getRoundNum() / 3, 40, 90) :
+                -Math.min(towerInfo.getPaintAmount(), 150 - Math.clamp(rc.getPaint(), 0, 150));
         //max = Math.min(100, Math.max(towerInfo.getPaintAmount(), max));
         if (rc.canTransferPaint(locationGoing, max)) {
           rc.transferPaint(locationGoing, max);
           currentTask = previousTask;
           locationGoing = previousLocationGoing;
+        }
+      }
+      if (rc.getLocation().distanceSquaredTo(locationGoing) < 20) {
+        if (rc.canSenseRobotAtLocation(locationGoing)) {
+          if (rc.senseRobotAtLocation(locationGoing).getPaintAmount() < 40) {
+            currentTask = previousTask;
+            locationGoing = previousLocationGoing;
+          }
         }
       }
     }
@@ -116,6 +136,17 @@ public class Soldier extends MovableUnit {
 
     decreaseRuinRounds();
 
+  }
+
+  private void senseBetterTowersToGetPaint() throws GameActionException {
+    for (MapLocation towers : towerLocations) {
+      if (rc.canSenseRobotAtLocation(towers)) {
+        RobotInfo tower = rc.senseRobotAtLocation(towers);
+        if (tower.getPaintAmount() > 50) {
+          locationGoing = towers;
+        }
+      }
+    }
   }
 
   protected void move() throws GameActionException {
@@ -137,12 +168,13 @@ public class Soldier extends MovableUnit {
     // Try to paint beneath us as we walk to avoid paint penalties.
     // Avoiding wasting paint by re-painting our own tiles.
 
-    MapInfo[] possiblePaintLocations = rc.senseNearbyMapInfos(8);
-    Arrays.sort(possiblePaintLocations, (a, b) ->  a.getMapLocation().distanceSquaredTo(rc.getLocation()) - b.getMapLocation().distanceSquaredTo(rc.getLocation()));
-    for (MapInfo loc : possiblePaintLocations) {
-      if (!loc.getPaint().isAlly() && rc.canAttack(loc.getMapLocation())) {
-       // System.out.println("Painted " + loc.getMapLocation());
-        rc.attack(loc.getMapLocation());
+    if (rc.getRoundNum() > 40 || rc.getPaint() < 140) {
+      MapInfo[] possiblePaintLocations = rc.senseNearbyMapInfos(8);
+      Arrays.sort(possiblePaintLocations, (a, b) -> a.getMapLocation().distanceSquaredTo(rc.getLocation()) - b.getMapLocation().distanceSquaredTo(rc.getLocation()));
+      for (MapInfo loc : possiblePaintLocations) {
+        if (!loc.getPaint().isAlly() && rc.canAttack(loc.getMapLocation())) {
+          rc.attack(loc.getMapLocation());
+        }
       }
     }
 
@@ -247,7 +279,7 @@ public class Soldier extends MovableUnit {
             totalFilled++;
           }
         }
-        if (totalFilled > 0) {
+        if (totalFilled > 0 && rc.getRoundNum() > 40) {
           previousRuins.add(currentRuin.getMapLocation());
           previousRuinsRounds.add(20);
           currentTask = SoldierTask.EXPLORING;

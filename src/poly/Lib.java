@@ -1,7 +1,9 @@
 package poly;
 
+
 import battlecode.common.*;
 
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -25,7 +27,7 @@ public class Lib {
     roundNum = rc.getRoundNum();
     lastRoundNum = roundNum--;
     center = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
-    oppositeMapLocation = rotationalCalc(rc.getLocation());
+    //oppositeMapLocation = rotationalCalc(rc.getLocation());
   }
   //pretty much any useful function or variables go here
   static final Direction[] directions = {
@@ -53,7 +55,7 @@ public class Lib {
 
   public Direction[] directionsToMiddle(MapLocation loc) {
     Direction dirToCenter = loc.directionTo(center);
-    return startDirList(dirToCenter.getDirectionOrderNum(), 10);
+    return startDirList(Arrays.asList(directions).indexOf(dirToCenter), 6);
   }
 
   public int getQuadrant(){
