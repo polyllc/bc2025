@@ -174,19 +174,11 @@ public class Soldier extends MovableUnit {
       for (MapInfo loc : possiblePaintLocations) {
         if (!loc.getPaint().isAlly() && rc.canAttack(loc.getMapLocation())) {
           rc.attack(loc.getMapLocation());
+          return;
         }
       }
     }
 
-//    for (Direction dir : Lib.directionsCenter) {
-//      if (rc.canSenseLocation(rc.getLocation().add(dir))) {
-//        MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
-//        if (!currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation().add(dir))) {
-//          System.out.println("Painted " + currentTile.getMapLocation());
-//          rc.attack(currentTile.getMapLocation());
-//        }
-//      }
-//    }
   }
 
   private void resetFromPaintingRuin() {
@@ -199,9 +191,11 @@ public class Soldier extends MovableUnit {
     Direction dir = rc.getLocation().directionTo(targetLoc);
     // Mark the pattern we need to draw to build a tower here if we haven't already.
     MapLocation shouldBeMarked = currentRuin.getMapLocation().subtract(dir);
-    if (rc.senseMapInfo(shouldBeMarked).getMark() == PaintType.EMPTY && rc.canMarkTowerPattern(getBestTowerToMark(), targetLoc)){
-      rc.markTowerPattern(getBestTowerToMark(), targetLoc);
-      System.out.println("Trying to build a tower at " + targetLoc);
+    if (rc.senseMapInfo(shouldBeMarked).getMark() == PaintType.EMPTY) {
+      if (rc.canMarkTowerPattern(getBestTowerToMark(), targetLoc)) {
+        rc.markTowerPattern(getBestTowerToMark(), targetLoc);
+        System.out.println("Trying to build a tower at " + targetLoc);
+      }
     }
     // Fill in any spots in the pattern with the appropriate paint.
     for (MapInfo patternTile : rc.senseNearbyMapInfos(targetLoc, 8)){
@@ -216,13 +210,14 @@ public class Soldier extends MovableUnit {
       }
     }
     // Complete the ruin if we can.
-    if (rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, targetLoc) ||
-            rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, targetLoc) ||
-            rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc)) {
-      if (rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, targetLoc)) {
+    boolean money = rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, targetLoc);
+    boolean defense = rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, targetLoc);
+    boolean paint = rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc);
+    if (money || defense || paint) {
+      if (money) {
         rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, targetLoc);
       }
-      else if (rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, targetLoc)) {
+      else if (defense) {
         rc.completeTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, targetLoc);
       }
       else {
@@ -237,10 +232,11 @@ public class Soldier extends MovableUnit {
   }
 
   private void searchForRuin() {
-    MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
+    MapInfo[] nearbyTiles = lib.nearbyTiles();
     // todo, return to "old" ruins
     for (MapInfo tile : nearbyTiles){
-      if (tile.hasRuin() && !rc.canSenseRobotAtLocation(tile.getMapLocation())) {
+      if (tile.hasRuin())  {
+        if (!rc.canSenseRobotAtLocation(tile.getMapLocation())) {
         for (int i = 0; i < previousRuinsRounds.size(); i++) {
           if (previousRuins.get(i).equals(tile.getMapLocation())) {
             if (previousRuinsRounds.get(i) > 0) { // our ruins are still on cooldown
@@ -254,6 +250,7 @@ public class Soldier extends MovableUnit {
         return;
       }
     }
+      }
   }
 
   //todo enemy paint
@@ -299,20 +296,42 @@ public class Soldier extends MovableUnit {
 
   private void goTowardsEmptySpots() {
     if (currentTask == SoldierTask.EXPLORING && rc.getRoundNum() > 100) {
-      MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
-      Arrays.sort(nearbyTiles, (a, b) -> {
-        return a.getMapLocation().distanceSquaredTo(lib.center) - b.getMapLocation().distanceSquaredTo(lib.center);
-      });
+      MapInfo[] nearbyTiles = lib.nearbyTiles();
+      int bestTileDistance = 999999;
+
       for (MapInfo tile : nearbyTiles) {
         if (tile.isPassable()) {
           if (tile.getPaint() == PaintType.EMPTY) { // todo, make this more random
-            directionGoing = rc.getLocation().directionTo(tile.getMapLocation());
-            return;
+            int distance = tile.getMapLocation().distanceSquaredTo(lib.center);
+            if (bestTileDistance < distance) {
+              bestTileDistance = distance;
+              directionGoing = rc.getLocation().directionTo(tile.getMapLocation());
+            }
           }
         }
       }
+
     }
   }
+
+
+//  private void goTowardsEmptySpots() {
+//    if (currentTask == SoldierTask.EXPLORING && rc.getRoundNum() > 100) {
+//      MapInfo[] nearbyTiles = lib.nearbyTiles();
+//      Arrays.sort(nearbyTiles, (a, b) -> a.getMapLocation().distanceSquaredTo(lib.center) - b.getMapLocation().distanceSquaredTo(lib.center));
+//
+//
+//
+//      for (MapInfo tile : nearbyTiles) {
+//        if (tile.isPassable()) {
+//          if (tile.getPaint() == PaintType.EMPTY) { // todo, make this more random
+//            directionGoing = rc.getLocation().directionTo(tile.getMapLocation());
+//            return;
+//          }
+//        }
+//      }
+//    }
+//  }
 
   private UnitType getBestTowerToMark() {
     /*
