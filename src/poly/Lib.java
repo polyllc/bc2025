@@ -1,7 +1,9 @@
 package poly;
 
+
 import battlecode.common.*;
 
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -10,11 +12,14 @@ public class Lib {
   RobotController rc;
 
   int roundNum;
-  int lastRoundNum;
+  int[] lastRoundNum = new int[5];
   MapLocation spawnLocations[];
 
   final MapLocation center;
 
+  RobotInfo[] currentRoundRobots =  new RobotInfo[0];
+
+  MapInfo[] currentRoundMapInfo = new MapInfo[0];
 
   static MapLocation noLoc = new MapLocation(256,256);
 
@@ -23,9 +28,11 @@ public class Lib {
   public Lib(RobotController robot) throws GameActionException {
     rc = robot;
     roundNum = rc.getRoundNum();
-    lastRoundNum = roundNum--;
+    for (int i = 0; i < 5; i++) {
+      lastRoundNum[i] = roundNum--;
+    }
     center = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
-    oppositeMapLocation = rotationalCalc(rc.getLocation());
+    //oppositeMapLocation = rotationalCalc(rc.getLocation());
   }
   //pretty much any useful function or variables go here
   static final Direction[] directions = {
@@ -53,7 +60,7 @@ public class Lib {
 
   public Direction[] directionsToMiddle(MapLocation loc) {
     Direction dirToCenter = loc.directionTo(center);
-    return startDirList(dirToCenter.getDirectionOrderNum(), 10);
+    return startDirList(Arrays.asList(directions).indexOf(dirToCenter), 6);
   }
 
   public int getQuadrant(){
@@ -122,16 +129,28 @@ public class Lib {
     return new MapLocation(0,0);
   }
 
-  RobotInfo[] currentRoundRobots =  new RobotInfo[0];
+
 
   public RobotInfo[] getRobots(boolean sort){
     roundNum = rc.getRoundNum();
-    if(currentRoundRobots.length == 0 || lastRoundNum < roundNum){
+    if(currentRoundRobots.length == 0 || lastRoundNum[0] < roundNum){
       currentRoundRobots = sort ? this.sort(rc.senseNearbyRobots()) : rc.senseNearbyRobots();
-      lastRoundNum = roundNum;
+      lastRoundNum[0] = roundNum;
     }
     return currentRoundRobots;
   }
+
+
+
+  public MapInfo[] nearbyTiles() {
+    roundNum = rc.getRoundNum();
+    if (currentRoundMapInfo.length == 0 || lastRoundNum[1] < roundNum) {
+      currentRoundMapInfo = rc.senseNearbyMapInfos();
+      lastRoundNum[1] = roundNum;
+    }
+    return currentRoundMapInfo;
+  }
+
 
   public <T> boolean contains(T[] ts, T t) {
     for (T item : ts) {
