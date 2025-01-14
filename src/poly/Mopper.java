@@ -1,6 +1,7 @@
 package poly;
 
 import battlecode.common.*;
+import battlecode.schema.RobotType;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,7 +31,8 @@ public class Mopper extends MovableUnit {
     MOPPING,
     MOPPING_RUIN,
     MOPPING_ENEMIES,
-    FOLLOW
+    FOLLOW,
+    TRANSFER
   }
 
   MopperTask currentTask = MopperTask.EXPLORING;
@@ -57,6 +59,9 @@ public class Mopper extends MovableUnit {
     else if (currentTask == MopperTask.FOLLOW) {
       follow();
     }
+    else if (currentTask == MopperTask.TRANSFER) {
+      transfer();
+    }
 
     move();
 
@@ -65,10 +70,9 @@ public class Mopper extends MovableUnit {
   @Override
   protected void move() throws GameActionException {
     if (currentTask == MopperTask.EXPLORING) {
-      if (rc.getRoundNum() < 90) {
+      if (rc.getNumberTowers() < 3) {
         currentTask = MopperTask.FOLLOW;
-        //follow();
-        //locationGoing = nav.minPaintLoss(rc.getLocation());
+
       }
       else {
         explore();
@@ -103,10 +107,62 @@ public class Mopper extends MovableUnit {
         return;
       }
     }
-      currentTask = MopperTask.EXPLORING;
+
+    /*
+    if (rc.getPaint() > 51) {
+      currentTask = MopperTask.TRANSFER;
+      return;
+    }
+
+     */
+
+    currentTask = MopperTask.EXPLORING;
+  }
+
+  // transfer paint to ally or tower
+  // tries to keep paint above half
+  private void transfer() throws GameActionException {
+    int amountPaintAboveHalf = rc.getPaint() - 50;
+    for (RobotInfo bot: rc.senseNearbyRobots()) {
+      if (rc.canTransferPaint(bot.location, amountPaintAboveHalf)) {
+        if (bot.type == UnitType.SOLDIER) {
+          //locationGoing = bot.location;
+          transferToAlly(amountPaintAboveHalf);
+          //currentTask = MopperTask.EXPLORING;
+          return;
+        }
+        rc.transferPaint(bot.location, amountPaintAboveHalf);
+        currentTask = MopperTask.EXPLORING;
+        return;
+      }
+      locationGoing = bot.location;
+      return;
+    }
+
+  }
+
+  // transfers a certain percentage of paint to a soldier
+  private void transferToAlly(int amount) throws GameActionException {
+    int lowestPaint = Integer.MAX_VALUE;
+    RobotInfo lowestBot = null;
+    for (RobotInfo botInfo: rc.senseNearbyRobots(-1, rc.getTeam())) {
+      if (botInfo.paintAmount < lowestPaint) {
+        lowestBot = botInfo;
+        lowestPaint = botInfo.paintAmount;
+      }
+    }
+    if (lowestBot != null) {
+      if (rc.canTransferPaint(lowestBot.location, amount)) {
+        rc.transferPaint(lowestBot.location, amount);
+        currentTask = MopperTask.EXPLORING;
+      }
+    }
+
   }
 
   // the moppers will follow soliders
+  // for the beginning rounds so they don't kill themselves
+  // also tranfers some paint to soliders when they can
   private void follow() throws GameActionException {
     for (RobotInfo botInfo: rc.senseNearbyRobots(-1, rc.getTeam())) {
       if (botInfo.type == UnitType.SOLDIER) {
@@ -173,6 +229,7 @@ public class Mopper extends MovableUnit {
 
   }
 
+  /*
   // counts how many enemy tiles are around and returns direction that has the most
   private Direction numEnemyTiles() throws GameActionException {
 
@@ -222,6 +279,8 @@ public class Mopper extends MovableUnit {
     };
 
   }
+
+   */
 
   // counts how many enemy bots there are and returns direction with most
   private Direction numEnemiesInDir() throws GameActionException {
