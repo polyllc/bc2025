@@ -23,7 +23,8 @@ public class Soldier extends MovableUnit {
     EXPLORING,
     PAINTING,
     WAITING_TO_BUILD_RUIN,
-    GETTING_MORE_PAINT
+    GETTING_MORE_PAINT,
+    WAITING_FOR_FUNDS
   }
 
   static final Random rng = new Random(6147);
@@ -82,13 +83,20 @@ public class Soldier extends MovableUnit {
             + " | dG: " + directionGoing
             + " | cR: " + currentRuin);
 
-    if (currentRuin == null) {
+    if (currentRuin == null && rc.getNumberTowers() < 25) {
       searchForRuin();
     }
 
     if (currentTask == SoldierTask.EXPLORING) {
       locationGoing = Lib.noLoc;
       goTowardsEmptySpots();
+    }
+
+    if (currentTask == SoldierTask.WAITING_FOR_FUNDS) {
+      if (rc.getMoney() >= 1000) {
+        locationGoing = currentRuin.getMapLocation();
+        currentTask = SoldierTask.PAINTING_RUIN;
+      }
     }
 
     if (currentTask == SoldierTask.PAINTING_RUIN) {
@@ -102,7 +110,7 @@ public class Soldier extends MovableUnit {
     }
     checkToClearRuin();
 
-    if (rc.getPaint() < 20 && currentTask != SoldierTask.GETTING_MORE_PAINT) {
+    if (rc.getPaint() < 20 && currentTask != SoldierTask.GETTING_MORE_PAINT && currentTask != SoldierTask.WAITING_FOR_FUNDS) {
       previousTask = currentTask;
       previousLocationGoing = locationGoing;
       currentTask = SoldierTask.GETTING_MORE_PAINT;
@@ -164,6 +172,7 @@ public class Soldier extends MovableUnit {
       if (currentTask == SoldierTask.PAINTING_RUIN) {
         resetFromPaintingRuin();
       }
+      resourcePatternPainting();
     }
     // Try to paint beneath us as we walk to avoid paint penalties.
     // Avoiding wasting paint by re-painting our own tiles.
@@ -173,8 +182,16 @@ public class Soldier extends MovableUnit {
       Arrays.sort(possiblePaintLocations, (a, b) -> a.getMapLocation().distanceSquaredTo(rc.getLocation()) - b.getMapLocation().distanceSquaredTo(rc.getLocation()));
       for (MapInfo loc : possiblePaintLocations) {
         if (!loc.getPaint().isAlly() && rc.canAttack(loc.getMapLocation())) {
-          rc.attack(loc.getMapLocation());
+          boolean useSecondaryColor = loc.getMark() == PaintType.ALLY_SECONDARY;
+          rc.attack(loc.getMapLocation(), useSecondaryColor);
           return;
+        }
+        else if (loc.getMark() != loc.getPaint()) {
+          if (rc.canAttack(loc.getMapLocation())) {
+            boolean useSecondaryColor = loc.getMark() == PaintType.ALLY_SECONDARY;
+            rc.attack(loc.getMapLocation(), useSecondaryColor);
+            return;
+          }
         }
       }
     }
@@ -190,67 +207,80 @@ public class Soldier extends MovableUnit {
     MapLocation targetLoc = locationGoing;
     Direction dir = rc.getLocation().directionTo(targetLoc);
     // Mark the pattern we need to draw to build a tower here if we haven't already.
-    MapLocation shouldBeMarked = currentRuin.getMapLocation().subtract(dir);
-    if (rc.senseMapInfo(shouldBeMarked).getMark() == PaintType.EMPTY) {
-      if (rc.canMarkTowerPattern(getBestTowerToMark(), targetLoc)) {
-        rc.markTowerPattern(getBestTowerToMark(), targetLoc);
-        System.out.println("Trying to build a tower at " + targetLoc);
-      }
-    }
-    // Fill in any spots in the pattern with the appropriate paint.
-    for (MapInfo patternTile : rc.senseNearbyMapInfos(targetLoc, 8)){
-      if (patternTile.getMark() != patternTile.getPaint() && patternTile.getMark() != PaintType.EMPTY) {
-        if (patternTile.getPaint() != PaintType.ENEMY_PRIMARY && patternTile.getPaint() != PaintType.ENEMY_SECONDARY) {
-          boolean useSecondaryColor = patternTile.getMark() == PaintType.ALLY_SECONDARY;
-          if (rc.canAttack(patternTile.getMapLocation())) {
-            System.out.println("PR Painted " + patternTile.getMapLocation());
-            rc.attack(patternTile.getMapLocation(), useSecondaryColor);
-          }
+    if (rc.canSenseLocation(targetLoc)) {
+      MapLocation shouldBeMarked = currentRuin.getMapLocation().subtract(dir);
+      if (rc.senseMapInfo(shouldBeMarked).getMark() == PaintType.EMPTY) {
+        if (rc.canMarkTowerPattern(getBestTowerToMark(), targetLoc)) {
+          rc.markTowerPattern(getBestTowerToMark(), targetLoc);
+          System.out.println("Trying to build a tower at " + targetLoc);
         }
       }
-    }
-    // Complete the ruin if we can.
-    boolean money = rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, targetLoc);
-    boolean defense = rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, targetLoc);
-    boolean paint = rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc);
-    if (money || defense || paint) {
-      if (money) {
-        rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, targetLoc);
+
+      int completedSpots = 0;
+      // Fill in any spots in the pattern with the appropriate paint.
+      for (MapInfo patternTile : rc.senseNearbyMapInfos(targetLoc, 8)) {
+        if (patternTile.getMark() != patternTile.getPaint() && patternTile.getMark() != PaintType.EMPTY) {
+          if (patternTile.getPaint() != PaintType.ENEMY_PRIMARY && patternTile.getPaint() != PaintType.ENEMY_SECONDARY) {
+            boolean useSecondaryColor = patternTile.getMark() == PaintType.ALLY_SECONDARY;
+            if (rc.canAttack(patternTile.getMapLocation())) {
+              System.out.println("PR Painted " + patternTile.getMapLocation());
+              rc.attack(patternTile.getMapLocation(), useSecondaryColor);
+            }
+          }
+        }
+        if (patternTile.getMark() == patternTile.getPaint() && patternTile.getPaint() != PaintType.EMPTY) {
+          completedSpots++;
+        }
       }
-      else if (defense) {
-        rc.completeTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, targetLoc);
+
+      if (completedSpots >= 25 && rc.getMoney() < 1000) {
+        currentTask = SoldierTask.WAITING_FOR_FUNDS;
+        return;
       }
-      else {
-        rc.completeTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc);
+
+      // Complete the ruin if we can.
+      boolean money = rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, targetLoc);
+      boolean defense = rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, targetLoc);
+      boolean paint = rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc);
+      if (money || defense || paint) {
+        if (money) {
+          rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, targetLoc);
+        } else if (defense) {
+          rc.completeTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, targetLoc);
+        } else {
+          rc.completeTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc);
+        }
+        rc.setTimelineMarker("Tower built", 0, 255, 0);
+        System.out.println("Built a tower at " + targetLoc + "!");
+        currentTask = SoldierTask.EXPLORING;
+        locationGoing = Lib.noLoc;
+        currentRuin = null;
       }
-      rc.setTimelineMarker("Tower built", 0, 255, 0);
-      System.out.println("Built a tower at " + targetLoc + "!");
-      currentTask = SoldierTask.EXPLORING;
-      locationGoing = Lib.noLoc;
-      currentRuin = null;
+
+
     }
   }
 
   private void searchForRuin() {
     MapInfo[] nearbyTiles = lib.nearbyTiles();
     // todo, return to "old" ruins
-    for (MapInfo tile : nearbyTiles){
-      if (tile.hasRuin())  {
+    for (MapInfo tile : nearbyTiles) {
+      if (tile.hasRuin()) {
         if (!rc.canSenseRobotAtLocation(tile.getMapLocation())) {
-        for (int i = 0; i < previousRuinsRounds.size(); i++) {
-          if (previousRuins.get(i).equals(tile.getMapLocation())) {
-            if (previousRuinsRounds.get(i) > 0) { // our ruins are still on cooldown
-              return;
+          for (int i = 0; i < previousRuinsRounds.size(); i++) {
+            if (previousRuins.get(i).equals(tile.getMapLocation())) {
+              if (previousRuinsRounds.get(i) > 0) { // our ruins are still on cooldown
+                return;
+              }
             }
           }
+          currentRuin = tile;
+          currentTask = SoldierTask.PAINTING_RUIN;
+          locationGoing = tile.getMapLocation();
+          return;
         }
-        currentRuin = tile;
-        currentTask = SoldierTask.PAINTING_RUIN;
-        locationGoing = tile.getMapLocation();
-        return;
       }
     }
-      }
   }
 
   //todo enemy paint
@@ -357,6 +387,27 @@ public class Soldier extends MovableUnit {
     }
     return rng.nextInt(0, 3) == 0 ? UnitType.LEVEL_ONE_DEFENSE_TOWER :
         (rng.nextInt(0, 2) == 0 ? UnitType.LEVEL_ONE_MONEY_TOWER : UnitType.LEVEL_ONE_PAINT_TOWER);
+  }
+
+  private void resourcePatternPainting() throws GameActionException {
+    if (rc.getPaint() > 50 && rc.getRoundNum() > 80) {
+      for (MapInfo info : lib.nearbyTiles()) {
+        if ((info.getMapLocation().x - 3) % 5 == 0 && (info.getMapLocation().y - 3) % 5 == 0) {
+          for (MapInfo paintInfo : rc.senseNearbyMapInfos(5)) {
+            if (paintInfo.hasRuin()) {
+              return;
+            } else if (paintInfo.getMark() == PaintType.ALLY_PRIMARY || paintInfo.getMark() == PaintType.ALLY_SECONDARY) {
+              return;
+            } else if (rc.canMarkResourcePattern(info.getMapLocation())) {
+              rc.markResourcePattern(info.getMapLocation());
+            } else if (rc.canCompleteResourcePattern(info.getMapLocation())) {
+              rc.completeResourcePattern(info.getMapLocation());
+            }
+          }
+
+        }
+      }
+    }
   }
 
 }

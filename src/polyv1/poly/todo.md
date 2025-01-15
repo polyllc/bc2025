@@ -16,6 +16,10 @@ lukasz
 - communication
 
 maciek
+- idk if you did this already but can you add my minPaintLoss move function to whatever you need (it's in Nav), thanks - Jess
 - soldiers
+- explore ai should prioritize more empty spots
+- stay away from enemy towers
 - spawn less money towers somehow
-- special resource pattern
+- soldiers shouldn't paint beneath themselves first ~50 rounds
+- spawn nothing between rounds 5-40ish
