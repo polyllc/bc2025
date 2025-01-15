@@ -1,4 +1,4 @@
-package poly;
+package polyv1;
 
 import battlecode.common.*;
 
@@ -17,8 +17,6 @@ public class Nav {
 
   boolean avoidEnemyTowers = false;
 
-  boolean avoidNonAllyPaint = false;
-
   private Lib lib;
 
 
@@ -30,7 +28,7 @@ public class Nav {
   //this is the navigation class that we create an object of for each robot to keep our nav code nice and neat
 
   public boolean tryMove(Direction dir) throws GameActionException {
-    if(rc.canMove(dir) && !enemyPaint(dir) && !enemyTower(dir) && !nonAllyPaint(dir)){
+    if(rc.canMove(dir) && !enemyPaint(dir) && !enemyTower(dir)){
       rc.move(dir);
       return true;
     }
@@ -153,11 +151,6 @@ public class Nav {
     return (avoidEnemyPaint && rc.canSenseLocation(loc))
             && (rc.senseMapInfo(loc).getPaint() == PaintType.ENEMY_PRIMARY
             || rc.senseMapInfo(loc).getPaint() == PaintType.ENEMY_SECONDARY);
-  }
-
-  private boolean nonAllyPaint(Direction dir) throws GameActionException {
-    return (avoidNonAllyPaint && rc.canSenseLocation(rc.getLocation().add(dir)) &&
-            !rc.senseMapInfo(rc.getLocation().add(dir)).getPaint().isAlly());
   }
 
   private boolean enemyTower(Direction dir) throws GameActionException {
