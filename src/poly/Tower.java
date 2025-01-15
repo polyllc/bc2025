@@ -25,7 +25,7 @@ public abstract class Tower extends Unit {
     if (rc.getRoundNum() < 8){
       build();
     }
-    else if (rc.getRoundNum() > 30) {
+    else if (rc.getRoundNum() > ((rc.getMapWidth() + 10) - ((rc.getMapWidth() / 6) * rc.getNumberTowers()))) {
       build();
     }
 
@@ -84,7 +84,7 @@ public abstract class Tower extends Unit {
     else if (rc.getRoundNum() < 40) {
       return (spawnedUnits % 2 == 0 ? UnitType.SOLDIER : UnitType.MOPPER);
     }
-    return spawnedUnits % 3 == 0 ? UnitType.SOLDIER : (spawnedUnits % 2 == 0 ? UnitType.MOPPER : UnitType.SOLDIER);
+    return spawnedUnits % 2 == 0 ? UnitType.SOLDIER : (spawnedUnits % 3 == 0 ? UnitType.MOPPER : UnitType.SPLASHER);
   }
 
   private void upgrade() throws GameActionException {

@@ -107,6 +107,7 @@ public class Soldier extends MovableUnit {
     move();
     if (currentTask != SoldierTask.GETTING_MORE_PAINT) {
       paint();
+      nav.avoidNonAllyPaint = false;
     }
     checkToClearRuin();
 
@@ -118,6 +119,7 @@ public class Soldier extends MovableUnit {
     }
 
     if (currentTask == SoldierTask.GETTING_MORE_PAINT) {
+      nav.avoidNonAllyPaint = true;
       senseBetterTowersToGetPaint();
       if (rc.getLocation().distanceSquaredTo(locationGoing) < 3) {
         RobotInfo towerInfo = rc.senseRobotAtLocation(locationGoing);
@@ -400,8 +402,10 @@ public class Soldier extends MovableUnit {
               return;
             } else if (rc.canMarkResourcePattern(info.getMapLocation())) {
               rc.markResourcePattern(info.getMapLocation());
+              return;
             } else if (rc.canCompleteResourcePattern(info.getMapLocation())) {
               rc.completeResourcePattern(info.getMapLocation());
+              return;
             }
           }
 
