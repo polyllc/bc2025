@@ -79,8 +79,8 @@ public class Soldier extends MovableUnit {
   @Override
   public void takeTurn() throws GameActionException {
 
-    if (rc.getRoundNum() > 400) {
-    //  rc.resign();
+    if (rc.getRoundNum() > 600) {
+     // rc.resign();
     }
 
     updateNearbyTowers();
@@ -191,6 +191,7 @@ public class Soldier extends MovableUnit {
       }
       resourcePatternPainting();
     }
+    attackEnemyTowers();
     // Try to paint beneath us as we walk to avoid paint penalties.
     // Avoiding wasting paint by re-painting our own tiles.
 
@@ -198,8 +199,8 @@ public class Soldier extends MovableUnit {
       MapInfo ownLoc = rc.senseMapInfo(rc.getLocation());
       if (ownLoc.getPaint() == PaintType.EMPTY && rc.canAttack(rc.getLocation())) {
         boolean useSecondaryColor = ownLoc.getMark() == PaintType.ALLY_SECONDARY;
-        rc.attack(rc.getLocation(), useSecondaryColor);
-        return;
+       // rc.attack(rc.getLocation(), useSecondaryColor);
+        //return;
       }
       MapInfo[] possiblePaintLocations = rc.senseNearbyMapInfos(8);
       if (currentTask == SoldierTask.PAINTING_RUIN) {
@@ -209,21 +210,26 @@ public class Soldier extends MovableUnit {
         Arrays.sort(possiblePaintLocations, (a, b) -> a.getMapLocation().distanceSquaredTo(rc.getLocation()) - b.getMapLocation().distanceSquaredTo(rc.getLocation()));
       }
       for (MapInfo loc : possiblePaintLocations) {
-        if (loc.getPaint() == PaintType.EMPTY && rc.canAttack(loc.getMapLocation())) {
-          boolean useSecondaryColor = loc.getMark() == PaintType.ALLY_SECONDARY;
-          rc.attack(loc.getMapLocation(), useSecondaryColor);
-          return;
-        }
-        else if (loc.getMark() != loc.getPaint() && loc.getMark() != PaintType.EMPTY) {
+
+        if (loc.getPaint() == PaintType.EMPTY) {
           if (rc.canAttack(loc.getMapLocation())) {
-            boolean useSecondaryColor = loc.getMark() == PaintType.ALLY_SECONDARY;
-            rc.attack(loc.getMapLocation(), useSecondaryColor);
-            return;
+            rc.attack(loc.getMapLocation(), getPaintMarker(loc.getMapLocation()));
+          }
+        }
+
+        if (loc.getPaint().isAlly()) {
+          if (paintType(loc.getPaint()) != getPaintMarker(loc.getMapLocation())) {
+            if (rc.canAttack(loc.getMapLocation())) {
+              rc.attack(loc.getMapLocation(), getPaintMarker(loc.getMapLocation()));
+            }
           }
         }
       }
     }
+  }
 
+  private boolean paintType(PaintType paintType) {
+    return paintType == PaintType.ALLY_SECONDARY;
   }
 
   private void resetFromPaintingRuin() {
@@ -420,26 +426,79 @@ public class Soldier extends MovableUnit {
   private void resourcePatternPainting() throws GameActionException {
     if (rc.getRoundNum() > 80) {
       for (MapInfo info : lib.nearbyTiles()) {
-        if ((info.getMapLocation().x - 3) % 5 == 0 && (info.getMapLocation().y - 3) % 5 == 0) {
+        if ((info.getMapLocation().x - 2) % 5 == 0 && (info.getMapLocation().y - 2) % 5 == 0) {
           if (rc.canCompleteResourcePattern(info.getMapLocation())) {
             Direction toLoc = rc.getLocation().directionTo(info.getMapLocation());
             directionGoing = toLoc != Direction.CENTER ? toLoc : directionGoing;
             rc.completeResourcePattern(info.getMapLocation());
           }
-          for (MapInfo paintInfo : rc.senseNearbyMapInfos(5)) {
-            if (paintInfo.hasRuin()) {
-              return;
-            } else if (paintInfo.getMark() == PaintType.ALLY_PRIMARY || paintInfo.getMark() == PaintType.ALLY_SECONDARY) {
-              return;
-            } else if (rc.getPaint() > 50 &&  rc.canMarkResourcePattern(info.getMapLocation())) {
-              rc.markResourcePattern(info.getMapLocation());
-            }
-          }
+//          for (MapInfo paintInfo : rc.senseNearbyMapInfos(5)) {
+//            if (paintInfo.hasRuin()) {
+//              return;
+//            } else if (paintInfo.getMark() == PaintType.ALLY_PRIMARY || paintInfo.getMark() == PaintType.ALLY_SECONDARY) {
+//              return;
+//            } else if (rc.getPaint() > 50 &&  rc.canMarkResourcePattern(info.getMapLocation())) {
+//              rc.markResourcePattern(info.getMapLocation());
+//            }
+//          }
 
         }
       }
     }
   }
 
-}
+  // 2 2 1 2 2
+  // 2 1 1 1 2
+  // 1 1 2 1 1
+  // 2 1 1 1 2
+  // 2 2 1 2 2
+  private boolean getPaintMarker(MapLocation loc) {
+    if (loc.x % 5 == 0) { // 1st column
+      if ((loc.y - 2) % 5 == 0) {
+        return false;
+      }
+      return true;
+    }
+    else {
+      boolean col24 = (loc.y - 4) % 5 == 0 || loc.y % 5 == 0;
+      if ((loc.x - 1) % 5 == 0) { // 2nd column
+        if (col24) { //1st and 5th row
+          return true;
+        }
+        return false;
+      }
+      else if ((loc.x - 2) % 5 == 0) { // 3rd column
+        if ((loc.y - 2) % 5 == 0) {
+          return true;
+        }
+        return false;
+      }
+      else if ((loc.x - 3) % 5 == 0) {
+        if (col24) { //1st and 5th row
+          return true;
+        }
+        return false;
+      }
+      else {
+        if ((loc.y - 2) % 5 == 0) {
+          return false;
+        }
+        return true;
+      }
+    }
+  }
 
+  // todo, if there are a lot of allies nearby, gang up and kill the tower!!!! (as in make locationGoing the tower)
+  private void attackEnemyTowers() throws GameActionException {
+    for (RobotInfo robot : lib.getRobots(false)) {
+      if (robot.getTeam() != rc.getTeam()) {
+        if (lib.isTower(robot.getType())) {
+          if (rc.canAttack(robot.getLocation())) {
+            rc.attack(robot.getLocation());
+          }
+        }
+      }
+    }
+  }
+
+}
