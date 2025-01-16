@@ -1,6 +1,5 @@
 jessr
 - moppers
-  - fix mopping ruins, they go away from it and then mop again?? keep them there and don't let them run away
 - keep bots away from each other
 
 quinny
