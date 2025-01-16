@@ -108,6 +108,7 @@ public class Mopper extends MovableUnit {
       }
     }
 
+    // why dont you work
     /*
     if (rc.getPaint() > 51) {
       currentTask = MopperTask.TRANSFER;
@@ -123,19 +124,30 @@ public class Mopper extends MovableUnit {
   // tries to keep paint above half
   private void transfer() throws GameActionException {
     int amountPaintAboveHalf = rc.getPaint() - 50;
+    // can't transfer paint if it goes below 50
+    if (amountPaintAboveHalf < 0) {
+      return;
+    }
     for (RobotInfo bot: rc.senseNearbyRobots()) {
-      if (rc.canTransferPaint(bot.location, amountPaintAboveHalf)) {
-        if (bot.type == UnitType.SOLDIER) {
+      if (rc.canTransferPaint(bot.getLocation(), amountPaintAboveHalf)) {
+        if (bot.getType() == UnitType.SOLDIER) {
           //locationGoing = bot.location;
           transferToAlly(amountPaintAboveHalf);
+          locationGoing = Lib.noLoc;
           //currentTask = MopperTask.EXPLORING;
           return;
         }
-        rc.transferPaint(bot.location, amountPaintAboveHalf);
+        if (bot.getType() == UnitType.LEVEL_ONE_MONEY_TOWER || bot.type == UnitType.LEVEL_TWO_MONEY_TOWER
+        || bot.getType() == UnitType.LEVEL_THREE_MONEY_TOWER) {
+          rc.transferPaint(bot.getLocation(), amountPaintAboveHalf);
+          locationGoing = Lib.noLoc;
+          return;
+        }
+
         currentTask = MopperTask.EXPLORING;
         return;
       }
-      locationGoing = bot.location;
+      locationGoing = bot.getLocation();
       return;
     }
 
@@ -146,14 +158,14 @@ public class Mopper extends MovableUnit {
     int lowestPaint = Integer.MAX_VALUE;
     RobotInfo lowestBot = null;
     for (RobotInfo botInfo: rc.senseNearbyRobots(-1, rc.getTeam())) {
-      if (botInfo.paintAmount < lowestPaint) {
+      if (botInfo.getPaintAmount() < lowestPaint) {
         lowestBot = botInfo;
-        lowestPaint = botInfo.paintAmount;
+        lowestPaint = botInfo.getPaintAmount();
       }
     }
     if (lowestBot != null) {
-      if (rc.canTransferPaint(lowestBot.location, amount)) {
-        rc.transferPaint(lowestBot.location, amount);
+      if (rc.canTransferPaint(lowestBot.getLocation(), amount)) {
+        rc.transferPaint(lowestBot.getLocation(), amount);
         currentTask = MopperTask.EXPLORING;
       }
     }
@@ -165,8 +177,8 @@ public class Mopper extends MovableUnit {
   // also tranfers some paint to soliders when they can
   private void follow() throws GameActionException {
     for (RobotInfo botInfo: rc.senseNearbyRobots(-1, rc.getTeam())) {
-      if (botInfo.type == UnitType.SOLDIER) {
-        directionGoing = rc.getLocation().directionTo(botInfo.location);
+      if (botInfo.getType() == UnitType.SOLDIER) {
+        directionGoing = rc.getLocation().directionTo(botInfo.getLocation());
         return;
       }
       else {
