@@ -1,4 +1,4 @@
-package poly;
+package polyv1;
 
 
 import battlecode.common.*;
@@ -12,14 +12,11 @@ public class Lib {
   RobotController rc;
 
   int roundNum;
-  int[] lastRoundNum = new int[5];
+  int lastRoundNum;
   MapLocation spawnLocations[];
 
   final MapLocation center;
 
-  RobotInfo[] currentRoundRobots =  new RobotInfo[0];
-
-  MapInfo[] currentRoundMapInfo = new MapInfo[0];
 
   static MapLocation noLoc = new MapLocation(256,256);
 
@@ -28,9 +25,7 @@ public class Lib {
   public Lib(RobotController robot) throws GameActionException {
     rc = robot;
     roundNum = rc.getRoundNum();
-    for (int i = 0; i < 5; i++) {
-      lastRoundNum[i] = roundNum--;
-    }
+    lastRoundNum = roundNum--;
     center = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
     //oppositeMapLocation = rotationalCalc(rc.getLocation());
   }
@@ -60,7 +55,7 @@ public class Lib {
 
   public Direction[] directionsToMiddle(MapLocation loc) {
     Direction dirToCenter = loc.directionTo(center);
-    return startDirList(Arrays.asList(directions).indexOf(dirToCenter), 8);
+    return startDirList(Arrays.asList(directions).indexOf(dirToCenter), 6);
   }
 
   public int getQuadrant(){
@@ -129,28 +124,16 @@ public class Lib {
     return new MapLocation(0,0);
   }
 
-
+  RobotInfo[] currentRoundRobots =  new RobotInfo[0];
 
   public RobotInfo[] getRobots(boolean sort){
     roundNum = rc.getRoundNum();
-    if(currentRoundRobots.length == 0 || lastRoundNum[0] < roundNum){
+    if(currentRoundRobots.length == 0 || lastRoundNum < roundNum){
       currentRoundRobots = sort ? this.sort(rc.senseNearbyRobots()) : rc.senseNearbyRobots();
-      lastRoundNum[0] = roundNum;
+      lastRoundNum = roundNum;
     }
     return currentRoundRobots;
   }
-
-
-
-  public MapInfo[] nearbyTiles() {
-    roundNum = rc.getRoundNum();
-    if (currentRoundMapInfo.length == 0 || lastRoundNum[1] < roundNum) {
-      currentRoundMapInfo = rc.senseNearbyMapInfos();
-      lastRoundNum[1] = roundNum;
-    }
-    return currentRoundMapInfo;
-  }
-
 
   public <T> boolean contains(T[] ts, T t) {
     for (T item : ts) {

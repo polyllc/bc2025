@@ -1,11 +1,11 @@
-package poly;
+package polyv1;
 
 import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 
-public class MoneyTower extends Tower {
+public class PaintTower extends Tower {
 
-  public MoneyTower(RobotController rc) throws GameActionException {
+  public PaintTower(RobotController rc) throws GameActionException {
     super(rc);
   }
 
