@@ -7,10 +7,11 @@ quinny
 - grind
 - splashers
   - make sure that they do not splash unfinished ruins\
+  - make sure that they do not splash the numbers that are ours
   - explore ai should prioritize more empty spots
   - splashing when already painted
 
-lukasz 
+smimmy 
 - calculate the best MapLocation to paint, i.e. every maplocation has a value associated with it on how "valuable" it is to paint and how "safe" it is from enemies painting it
 - https://www.youtube.com/@MITBattlecode watch the communication lecture
 - communication
@@ -19,3 +20,8 @@ maciek
 - soldiers
 - spawn less money towers somehow
 - special resource pattern
+
+
+anyone
+- keep bots away from each other if possible
+- 
