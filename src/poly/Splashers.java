@@ -1,11 +1,10 @@
 package poly;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapInfo;
-import battlecode.common.RobotController;
+import battlecode.common.*;
 
 public class Splashers extends MovableUnit {
+
+  MapLocation nearestPaintTower = null;
 
   public Splashers(RobotController rc) throws GameActionException {
     super(rc);
@@ -24,7 +23,8 @@ public class Splashers extends MovableUnit {
   public enum SplasherTask {
     EXPLORE,
     GOING_BACK_TO_TOWER,
-    PAINT_WORLD
+    PAINT_WORLD,
+    FINDING_TOWER
   }
 
   SplasherTask currentTask = SplasherTask.EXPLORE;
@@ -40,15 +40,33 @@ public class Splashers extends MovableUnit {
         + " | dG: " + directionGoing);
 
     move();
-    paint();
 
-    if (rc.getPaint() < 51) {
-      locationGoing = spawnedTower;
-      currentTask = SplasherTask.GOING_BACK_TO_TOWER;
+    if (currentTask.equals(SplasherTask.EXPLORE)) {
+      paint();
     }
 
-    if (rc.getLocation().distanceSquaredTo(spawnedTower) < 4) {
-      rc.transferPaint(spawnedTower, 150);
+    if (rc.getPaint() < 51) {
+      if (this.getNearestPaintTower() != null) {
+        locationGoing = this.getNearestPaintTower();
+        nearestPaintTower = this.getNearestPaintTower();
+        currentTask = SplasherTask.GOING_BACK_TO_TOWER;
+      }
+      else {
+        locationGoing = spawnedTower;
+        currentTask = SplasherTask.FINDING_TOWER;
+      }
+    }
+
+    if (currentTask == SplasherTask.FINDING_TOWER) {
+      if (this.getNearestPaintTower() != null) {
+        nearestPaintTower = this.getNearestPaintTower();
+        locationGoing = this.getNearestPaintTower();
+        currentTask = SplasherTask.GOING_BACK_TO_TOWER;
+      }
+    }
+
+    if (rc.getLocation().distanceSquaredTo(nearestPaintTower) < 4) {
+      rc.transferPaint(spawnedTower, 50);
       currentTask = SplasherTask.EXPLORE;
     }
   }
@@ -123,6 +141,21 @@ public class Splashers extends MovableUnit {
       locationGoing = Lib.noLoc;
     }
     super.move();
+  }
+
+  private MapLocation getNearestPaintTower() throws GameActionException {
+    for (MapLocation tower : towerLocations) {
+      if (rc.senseRobotAtLocation(tower).getType().equals(UnitType.LEVEL_ONE_PAINT_TOWER) ||
+      rc.senseRobotAtLocation(tower).getType().equals(UnitType.LEVEL_TWO_PAINT_TOWER) ||
+      rc.senseRobotAtLocation(tower).getType().equals(UnitType.LEVEL_THREE_PAINT_TOWER)) {
+        return tower;
+      }
+    }
+      return null;
+  }
+
+  private int getSplashScore() throws GameActionException {
+    return 0;
   }
 
 
