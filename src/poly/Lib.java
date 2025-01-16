@@ -525,4 +525,14 @@ public class Lib {
   }
 
 
+  public void resourcePatternPainting() throws GameActionException {
+    for (MapInfo info : nearbyTiles()) {
+      if ((info.getMapLocation().x - 2) % 4 == 0 && (info.getMapLocation().y - 2) % 4 == 0) {
+        if (rc.canCompleteResourcePattern(info.getMapLocation())) {
+          rc.completeResourcePattern(info.getMapLocation());
+        }
+      }
+    }
+  }
+
 }

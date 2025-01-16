@@ -33,7 +33,7 @@ public class Splashers extends MovableUnit {
 
   @Override
   public void takeTurn() throws GameActionException {
-
+    lib.resourcePatternPainting();
     updateNearbyTowers();
 
     rc.setIndicatorString("lG: " + locationGoing.toString()

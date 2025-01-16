@@ -80,7 +80,7 @@ public class Soldier extends MovableUnit {
   public void takeTurn() throws GameActionException {
 
     if (rc.getRoundNum() > 600) {
-     // rc.resign();
+    //  rc.resign();
     }
 
     updateNearbyTowers();
@@ -424,63 +424,52 @@ public class Soldier extends MovableUnit {
   }
 
   private void resourcePatternPainting() throws GameActionException {
-    if (rc.getRoundNum() > 80) {
       for (MapInfo info : lib.nearbyTiles()) {
-        if ((info.getMapLocation().x - 2) % 5 == 0 && (info.getMapLocation().y - 2) % 5 == 0) {
+        if ((info.getMapLocation().x - 2) % 4 == 0 && (info.getMapLocation().y - 2) % 4 == 0) {
           if (rc.canCompleteResourcePattern(info.getMapLocation())) {
             Direction toLoc = rc.getLocation().directionTo(info.getMapLocation());
             directionGoing = toLoc != Direction.CENTER ? toLoc : directionGoing;
             rc.completeResourcePattern(info.getMapLocation());
           }
-//          for (MapInfo paintInfo : rc.senseNearbyMapInfos(5)) {
-//            if (paintInfo.hasRuin()) {
-//              return;
-//            } else if (paintInfo.getMark() == PaintType.ALLY_PRIMARY || paintInfo.getMark() == PaintType.ALLY_SECONDARY) {
-//              return;
-//            } else if (rc.getPaint() > 50 &&  rc.canMarkResourcePattern(info.getMapLocation())) {
-//              rc.markResourcePattern(info.getMapLocation());
-//            }
-//          }
-
         }
       }
-    }
   }
 
+  // todo omg the lines can overlap?? like the edges can be shared between two boosts
   // 2 2 1 2 2
   // 2 1 1 1 2
   // 1 1 2 1 1
   // 2 1 1 1 2
   // 2 2 1 2 2
   private boolean getPaintMarker(MapLocation loc) {
-    if (loc.x % 5 == 0) { // 1st column
-      if ((loc.y - 2) % 5 == 0) {
+    if (loc.x % 4 == 0) { // 1st column
+      if ((loc.y - 2) % 4 == 0) {
         return false;
       }
       return true;
     }
     else {
-      boolean col24 = (loc.y - 4) % 5 == 0 || loc.y % 5 == 0;
-      if ((loc.x - 1) % 5 == 0) { // 2nd column
+      boolean col24 = (loc.y - 4) % 4 == 0 || loc.y % 4 == 0;
+      if ((loc.x - 1) % 4 == 0) { // 2nd column
         if (col24) { //1st and 5th row
           return true;
         }
         return false;
       }
-      else if ((loc.x - 2) % 5 == 0) { // 3rd column
-        if ((loc.y - 2) % 5 == 0) {
+      else if ((loc.x - 2) % 4 == 0) { // 3rd column
+        if ((loc.y - 2) % 4 == 0) {
           return true;
         }
         return false;
       }
-      else if ((loc.x - 3) % 5 == 0) {
+      else if ((loc.x - 3) % 4 == 0) { // 4th column
         if (col24) { //1st and 5th row
           return true;
         }
         return false;
       }
       else {
-        if ((loc.y - 2) % 5 == 0) {
+        if ((loc.y - 2) % 4 == 0) {
           return false;
         }
         return true;

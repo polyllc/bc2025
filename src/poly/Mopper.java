@@ -37,6 +37,9 @@ public class Mopper extends MovableUnit {
   @Override
   public void takeTurn() throws GameActionException {
 
+    updateNearbyTowers();
+    lib.resourcePatternPainting();
+
     rc.setIndicatorString("lG: " + locationGoing.toString()
         + " | cT: " + currentTask
         + " | dG: " + directionGoing);
