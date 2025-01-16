@@ -1,4 +1,4 @@
-package poly;
+package polyv1;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -22,10 +22,15 @@ public abstract class Tower extends Unit {
   public void takeTurn() throws GameActionException {
     attack();
 
-    if (rc.getRoundNum() < 8){
-      build();
+    if (rc.getRoundNum() < 2) {
+
+      for (Direction dir : lib.directionsToMiddle(rc.getLocation())) {
+        if (rc.canBuildRobot(UnitType.MOPPER, rc.getLocation().add(dir))) {
+          rc.buildRobot(UnitType.MOPPER, rc.getLocation().add(dir));
+        }
+      }
     }
-    else if (rc.getRoundNum() > ((rc.getMapWidth() + 10) - ((rc.getMapWidth() / 6) * rc.getNumberTowers()))) {
+    else {
       build();
     }
 
@@ -66,7 +71,7 @@ public abstract class Tower extends Unit {
 
   private void build() throws GameActionException {
     System.out.println("cost to build: " + (1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)));
-    if (rc.getRoundNum() < 65 || rc.getMoney() > 1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)) {
+    if (rc.getRoundNum() < 50 || rc.getMoney() > 1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)) {
       for (Direction dir : lib.directionsToMiddle(rc.getLocation())) {
         if (rc.canBuildRobot(getBestRobot(), rc.getLocation().add(dir))) {
           rc.buildRobot(getBestRobot(), rc.getLocation().add(dir));
@@ -78,16 +83,13 @@ public abstract class Tower extends Unit {
 
   // todo, update
   private UnitType getBestRobot() {
-    if (rc.getRoundNum() < 100) {
+    if (rc.getRoundNum() < 10) {
       return UnitType.SOLDIER;
     }
     else if (rc.getRoundNum() < 40) {
       return (spawnedUnits % 2 == 0 ? UnitType.SOLDIER : UnitType.MOPPER);
     }
-    else if (rc.getNumberTowers() > 10) {
-      return spawnedUnits %3 == 0 ? UnitType.SOLDIER : (spawnedUnits % 2 == 0 ? UnitType.MOPPER : UnitType.SPLASHER);
-    }
-    return spawnedUnits % 2 == 0 ? UnitType.SOLDIER : (spawnedUnits % 3 == 0 ? UnitType.MOPPER : UnitType.SPLASHER);
+    return spawnedUnits % 3 == 0 ? UnitType.SOLDIER : (spawnedUnits % 2 == 0 ? UnitType.MOPPER : UnitType.SPLASHER);
   }
 
   private void upgrade() throws GameActionException {

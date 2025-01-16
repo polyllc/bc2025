@@ -1,9 +1,8 @@
-package poly;
+package polyv1;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapInfo;
-import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 
 public class Splashers extends MovableUnit {
@@ -92,7 +91,7 @@ public class Splashers extends MovableUnit {
     //when new lib function is made, put all code in that
     if (!rc.senseMapInfo(rc.getLocation()).getPaint().isAlly()) {
       if (rc.canAttack(rc.getLocation())) {
-        attack(rc.getLocation());
+        rc.attack(rc.getLocation());
       }
     }
 
@@ -100,7 +99,7 @@ public class Splashers extends MovableUnit {
       if (rc.canSenseLocation(rc.getLocation().add(dir).add(dir))) {
         MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
         if (!currentTile.getPaint().isAlly() && rc.canAttack(currentTile.getMapLocation())) {
-          attack(currentTile.getMapLocation());
+          rc.attack(currentTile.getMapLocation());
         }
       }
     }
@@ -109,7 +108,7 @@ public class Splashers extends MovableUnit {
       if (rc.canSenseLocation(rc.getLocation().add(dir))) {
         MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
         if (!currentTile.getPaint().isAlly() && rc.canAttack(currentTile.getMapLocation())) {
-          attack(currentTile.getMapLocation());
+          rc.attack(currentTile.getMapLocation());
         }
       }
     }
@@ -118,16 +117,6 @@ public class Splashers extends MovableUnit {
 
 
   }
-
-  private void attack(MapLocation loc) throws GameActionException {
-    for (MapInfo info : rc.senseNearbyMapInfos(loc, 8)) {
-      if (info.getMark().isAlly()) {
-        return;
-      }
-    }
-    rc.attack(loc);
-  }
-
   protected void move() throws GameActionException {
     if (currentTask == SplasherTask.EXPLORE) {
       explore();
