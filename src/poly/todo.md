@@ -19,7 +19,7 @@ smimmy
 maciek
 - soldiers
 - spawn less money towers somehow
-- special resource pattern
+- towers can spawn farther away than I thought???
 
 
 anyone
