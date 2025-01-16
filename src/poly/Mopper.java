@@ -1,6 +1,7 @@
 package poly;
 
 import battlecode.common.*;
+import battlecode.schema.RobotType;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,7 +30,9 @@ public class Mopper extends MovableUnit {
     EXPLORING,
     MOPPING,
     MOPPING_RUIN,
-    MOPPING_ENEMIES
+    MOPPING_ENEMIES,
+    FOLLOW,
+    TRANSFER
   }
 
   MopperTask currentTask = MopperTask.EXPLORING;
@@ -56,6 +59,12 @@ public class Mopper extends MovableUnit {
     else if (currentTask == MopperTask.MOPPING_ENEMIES) {
       mopEnemies();
     }
+    else if (currentTask == MopperTask.FOLLOW) {
+      follow();
+    }
+    else if (currentTask == MopperTask.TRANSFER) {
+      transfer();
+    }
 
     move();
 
@@ -64,7 +73,13 @@ public class Mopper extends MovableUnit {
   @Override
   protected void move() throws GameActionException {
     if (currentTask == MopperTask.EXPLORING) {
-      explore();
+      if (rc.getNumberTowers() < 3) {
+        currentTask = MopperTask.FOLLOW;
+
+      }
+      else {
+        explore();
+      }
     }
     super.move();
   }
@@ -95,8 +110,87 @@ public class Mopper extends MovableUnit {
         return;
       }
     }
-      currentTask = MopperTask.EXPLORING;
+
+    // why dont you work
+    /*
+    if (rc.getPaint() > 51) {
+      currentTask = MopperTask.TRANSFER;
+      return;
+    }
+
+     */
+
+    currentTask = MopperTask.EXPLORING;
   }
+
+  // transfer paint to ally or tower
+  // tries to keep paint above half
+  private void transfer() throws GameActionException {
+    int amountPaintAboveHalf = rc.getPaint() - 50;
+    // can't transfer paint if it goes below 50
+    if (amountPaintAboveHalf < 0) {
+      return;
+    }
+    for (RobotInfo bot: rc.senseNearbyRobots()) {
+      if (rc.canTransferPaint(bot.getLocation(), amountPaintAboveHalf)) {
+        if (bot.getType() == UnitType.SOLDIER) {
+          //locationGoing = bot.location;
+          transferToAlly(amountPaintAboveHalf);
+          locationGoing = Lib.noLoc;
+          //currentTask = MopperTask.EXPLORING;
+          return;
+        }
+        if (bot.getType() == UnitType.LEVEL_ONE_MONEY_TOWER || bot.type == UnitType.LEVEL_TWO_MONEY_TOWER
+        || bot.getType() == UnitType.LEVEL_THREE_MONEY_TOWER) {
+          rc.transferPaint(bot.getLocation(), amountPaintAboveHalf);
+          locationGoing = Lib.noLoc;
+          return;
+        }
+
+        currentTask = MopperTask.EXPLORING;
+        return;
+      }
+      locationGoing = bot.getLocation();
+      return;
+    }
+
+  }
+
+  // transfers a certain percentage of paint to a soldier
+  private void transferToAlly(int amount) throws GameActionException {
+    int lowestPaint = Integer.MAX_VALUE;
+    RobotInfo lowestBot = null;
+    for (RobotInfo botInfo: rc.senseNearbyRobots(-1, rc.getTeam())) {
+      if (botInfo.getPaintAmount() < lowestPaint) {
+        lowestBot = botInfo;
+        lowestPaint = botInfo.getPaintAmount();
+      }
+    }
+    if (lowestBot != null) {
+      if (rc.canTransferPaint(lowestBot.getLocation(), amount)) {
+        rc.transferPaint(lowestBot.getLocation(), amount);
+        currentTask = MopperTask.EXPLORING;
+      }
+    }
+
+  }
+
+  // the moppers will follow soliders
+  // for the beginning rounds so they don't kill themselves
+  // also tranfers some paint to soliders when they can
+  private void follow() throws GameActionException {
+    for (RobotInfo botInfo: rc.senseNearbyRobots(-1, rc.getTeam())) {
+      if (botInfo.getType() == UnitType.SOLDIER) {
+        directionGoing = rc.getLocation().directionTo(botInfo.getLocation());
+        return;
+      }
+      else {
+        nav.minPaintLoss(rc.getLocation());
+        return;
+      }
+    }
+  }
+
 
   // mops an enemy tile
   private void mopTile() throws GameActionException {
@@ -109,19 +203,6 @@ public class Mopper extends MovableUnit {
       }
     }
 
-    /*
-    int paintCounter = 0;
-    for (MapInfo tile: rc.senseNearbyMapInfos()) {
-      if (tile.getPaint() == PaintType.ENEMY_PRIMARY || tile.getPaint() == PaintType.ENEMY_SECONDARY) {
-        paintCounter++;
-      }
-    }
-
-    if (paintCounter == 0) {
-      currentTask = MopperTask.EXPLORING;
-    }
-
-     */
   }
 
   // mops nearby enemies in the best direction with most enemies
@@ -163,6 +244,7 @@ public class Mopper extends MovableUnit {
 
   }
 
+  /*
   // counts how many enemy tiles are around and returns direction that has the most
   private Direction numEnemyTiles() throws GameActionException {
 
@@ -212,6 +294,8 @@ public class Mopper extends MovableUnit {
     };
 
   }
+
+   */
 
   // counts how many enemy bots there are and returns direction with most
   private Direction numEnemiesInDir() throws GameActionException {
