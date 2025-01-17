@@ -1,8 +1,7 @@
-package poly;
+package polyv2;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.UnitType;
@@ -69,16 +68,8 @@ public abstract class Tower extends Unit {
     System.out.println("cost to build: " + (1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)));
     if (rc.getRoundNum() < 65 || rc.getMoney() > 1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)) {
       for (Direction dir : lib.directionsToMiddle(rc.getLocation())) {
-        MapLocation loc = rc.getLocation().add(dir);
-        if (rc.getRoundNum() < 10) {
-          loc = loc.add(dir);
-        }
-        if (rc.canBuildRobot(getBestRobot(), loc)) {
-          rc.buildRobot(getBestRobot(), loc);
-          spawnedUnits++;
-        }
-        else if (rc.canBuildRobot(getBestRobot(), loc.add(dir.opposite()))) {
-          rc.buildRobot(getBestRobot(), loc.add(dir.opposite()));
+        if (rc.canBuildRobot(getBestRobot(), rc.getLocation().add(dir))) {
+          rc.buildRobot(getBestRobot(), rc.getLocation().add(dir));
           spawnedUnits++;
         }
       }

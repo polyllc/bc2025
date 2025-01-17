@@ -1,4 +1,4 @@
-package poly;
+package polyv2;
 
 
 import battlecode.common.*;
@@ -533,22 +533,6 @@ public class Lib {
         }
       }
     }
-  }
-
-  public Direction detectWall(MapLocation loc) {
-    if (loc.y == 0) {
-      return Direction.NORTH;
-    }
-    else if (loc.x == 1) {
-      return Direction.EAST;
-    }
-    else if (loc.y == rc.getMapHeight() - 1) {
-      return Direction.SOUTH;
-    }
-    else if (loc.x == rc.getMapWidth() - 1) {
-      return Direction.WEST;
-    }
-    return Direction.CENTER;
   }
 
 }

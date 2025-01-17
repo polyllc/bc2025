@@ -32,7 +32,7 @@ public class Splashers extends MovableUnit {
 
   @Override
   public void takeTurn() throws GameActionException {
-
+    lib.resourcePatternPainting();
     updateNearbyTowers();
 
     if (rc.getPaint() < 51) {
@@ -78,7 +78,7 @@ public class Splashers extends MovableUnit {
   }
 
   private void getNearestPaintTower() throws GameActionException {
-    if (paintTowerLocations.size() > 0) {
+    if (!paintTowerLocations.isEmpty()) {
       int distance = rc.getLocation().distanceSquaredTo(paintTowerLocations.get(0));
       for (MapLocation tower : paintTowerLocations) {
         if (distance < rc.getLocation().distanceSquaredTo(tower)) {

@@ -1,11 +1,9 @@
-package poly;
+package polyv2;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Queue;
 import java.util.Random;
 
 import battlecode.common.Direction;
@@ -37,7 +35,6 @@ public class Soldier extends MovableUnit {
   MapLocation taskLocation = Lib.noLoc;
 
   MapLocation previousLocationGoing = Lib.noLoc;
-  Direction previousDirectionGoing = Direction.CENTER;
 
   SoldierTask currentTask = SoldierTask.EXPLORING;
   SoldierTask previousTask = SoldierTask.EXPLORING;
@@ -46,10 +43,8 @@ public class Soldier extends MovableUnit {
 
 
 
-  List<MapLocation> previousRuins = new ArrayList<>();
-  List<Integer> previousRuinsRounds = new ArrayList<>();
-
-  List<MapLocation> emptySpots = new ArrayList<>(10);
+  List<MapLocation> previousRuins = new ArrayList<MapLocation>();
+  List<Integer> previousRuinsRounds = new ArrayList<Integer>();
 
 
   public Soldier(RobotController rc) throws GameActionException {
@@ -125,10 +120,9 @@ public class Soldier extends MovableUnit {
     move();
     checkToClearRuin();
 
-    if (rc.getPaint() < Math.min(30, 10 + rc.getLocation().distanceSquaredTo(spawnedTower)) && currentTask != SoldierTask.GETTING_MORE_PAINT && currentTask != SoldierTask.WAITING_FOR_FUNDS) {
+    if (rc.getPaint() < 25 && currentTask != SoldierTask.GETTING_MORE_PAINT && currentTask != SoldierTask.WAITING_FOR_FUNDS) {
       previousTask = currentTask;
       previousLocationGoing = locationGoing;
-      previousDirectionGoing = directionGoing;
       currentTask = SoldierTask.GETTING_MORE_PAINT;
       locationGoing = spawnedTower;
     }
@@ -144,13 +138,13 @@ public class Soldier extends MovableUnit {
       senseBetterTowersToGetPaint();
       if (rc.getLocation().distanceSquaredTo(locationGoing) < 3) {
         RobotInfo towerInfo = rc.senseRobotAtLocation(locationGoing);
-        int max = getMax(towerInfo);
+        int max = towerInfo.getPaintAmount() < Math.clamp(90 - rc.getRoundNum() / 3, 40, 90) ? -Math.clamp(90 - rc.getRoundNum() / 3, 40, 90) :
+                -Math.min(towerInfo.getPaintAmount(), 150 - Math.clamp(rc.getPaint(), 0, 150));
         //max = Math.min(100, Math.max(towerInfo.getPaintAmount(), max));
         if (rc.canTransferPaint(locationGoing, max)) {
           rc.transferPaint(locationGoing, max);
           currentTask = previousTask;
           locationGoing = previousLocationGoing;
-          directionGoing = previousDirectionGoing;
         }
       }
       if (rc.getLocation().distanceSquaredTo(locationGoing) < 20) {
@@ -158,7 +152,6 @@ public class Soldier extends MovableUnit {
           if (rc.senseRobotAtLocation(locationGoing).getPaintAmount() < 40) {
             currentTask = previousTask;
             locationGoing = previousLocationGoing;
-            directionGoing = previousDirectionGoing;
           }
         }
       }
@@ -170,22 +163,11 @@ public class Soldier extends MovableUnit {
 
   }
 
-  private int getMax(RobotInfo towerInfo) {
-    int max = towerInfo.getPaintAmount() < Math.clamp(90 - rc.getRoundNum() / 3, 40, 90) ? -Math.clamp(90 - rc.getRoundNum() / 3, 40, 90) :
-            -Math.min(towerInfo.getPaintAmount(), 150 - Math.clamp(rc.getPaint(), 0, 150));
-    if (towerInfo.getType() == UnitType.LEVEL_ONE_MONEY_TOWER || towerInfo.getType() == UnitType.LEVEL_TWO_MONEY_TOWER || towerInfo.getType() == UnitType.LEVEL_THREE_MONEY_TOWER) {
-      if (-towerInfo.getPaintAmount() < max) {
-       // max = -towerInfo.getPaintAmount();
-      }
-    }
-    return max;
-  }
-
   private void senseBetterTowersToGetPaint() throws GameActionException {
     for (MapLocation towers : towerLocations) {
       if (rc.canSenseRobotAtLocation(towers)) {
         RobotInfo tower = rc.senseRobotAtLocation(towers);
-        if (tower.getPaintAmount() > 30) {
+        if (tower.getPaintAmount() > 50) {
           locationGoing = towers;
         }
       }
@@ -376,58 +358,65 @@ public class Soldier extends MovableUnit {
     }
   }
 
-  private void goTowardsEmptySpots() throws GameActionException {
+  private void goTowardsEmptySpots() {
     if (currentTask == SoldierTask.EXPLORING && rc.getRoundNum() > 100) {
       MapInfo[] nearbyTiles = lib.nearbyTiles();
       int bestTileDistance = 999999;
 
-      if (emptySpots.isEmpty()) {
-        for (MapInfo tile : nearbyTiles) {
-          if (tile.isPassable()) {
-            if (tile.getPaint() == PaintType.EMPTY) { // todo, make this more random
-              int distance = tile.getMapLocation().distanceSquaredTo(lib.center);
-              if (bestTileDistance < distance) {
-                bestTileDistance = distance;
-                directionGoing = rc.getLocation().directionTo(tile.getMapLocation());
-              }
-              emptySpots.add(tile.getMapLocation());
+      for (MapInfo tile : nearbyTiles) {
+        if (tile.isPassable()) {
+          if (tile.getPaint() == PaintType.EMPTY) { // todo, make this more random
+            int distance = tile.getMapLocation().distanceSquaredTo(lib.center);
+            if (bestTileDistance < distance) {
+              bestTileDistance = distance;
+              directionGoing = rc.getLocation().directionTo(tile.getMapLocation());
             }
           }
         }
       }
-      if (!emptySpots.isEmpty()) {
-        if (rc.canSenseLocation(emptySpots.getFirst())) {
-          MapInfo loc = rc.senseMapInfo(emptySpots.getFirst());
-          directionGoing = rc.getLocation().directionTo(loc.getMapLocation());
-          if (directionGoing == Direction.CENTER) {
-            directionGoing = rc.getLocation().directionTo(lib.center);
-          }
-          if (loc.getPaint() != PaintType.EMPTY) {
-            emptySpots.removeFirst();
-          }
-        }
-        if (rc.getRoundNum() > 200 && rc.getRoundNum() % (emptySpots.size() * 2) + 1 == 0) {
-          for (MapInfo tile : nearbyTiles) {
-            if (tile.isPassable()) {
-              if (tile.getPaint() == PaintType.EMPTY) { // todo, make this more random
-                if (!emptySpots.contains(tile.getMapLocation())) {
-                  emptySpots.add(tile.getMapLocation());
-                }
-              }
-            }
-          }
-        }
-      }
+
     }
   }
 
 
+//  private void goTowardsEmptySpots() {
+//    if (currentTask == SoldierTask.EXPLORING && rc.getRoundNum() > 100) {
+//      MapInfo[] nearbyTiles = lib.nearbyTiles();
+//      Arrays.sort(nearbyTiles, (a, b) -> a.getMapLocation().distanceSquaredTo(lib.center) - b.getMapLocation().distanceSquaredTo(lib.center));
+//
+//
+//
+//      for (MapInfo tile : nearbyTiles) {
+//        if (tile.isPassable()) {
+//          if (tile.getPaint() == PaintType.EMPTY) { // todo, make this more random
+//            directionGoing = rc.getLocation().directionTo(tile.getMapLocation());
+//            return;
+//          }
+//        }
+//      }
+//    }
+//  }
+
   private UnitType getBestTowerToMark() {
-    if (rc.getRoundNum() < rc.getMapWidth() / 2) {
+    /*
+    if (rc.getRoundNum() < rc.getMapWidth()) {
+      return UnitType.LEVEL_ONE_MONEY_TOWER;
+    }
+    else if (rc.getRoundNum() < 300) {
+      return UnitType.LEVEL_ONE_PAINT_TOWER;
+    }
+    return rng.nextInt(0, 2) == 0 ?
+            UnitType.LEVEL_ONE_MONEY_TOWER : UnitType.LEVEL_ONE_PAINT_TOWER;
+
+     */
+
+
+
+    if (rc.getRoundNum() < rc.getMapWidth()) {
       return UnitType.LEVEL_ONE_MONEY_TOWER;
     }
     else if (rc.getRoundNum() < 500) {
-      return rc.getRoundNum() % 3 == 0 ?
+      return rc.getRoundNum() % 2 == 0 ?
           UnitType.LEVEL_ONE_MONEY_TOWER : UnitType.LEVEL_ONE_PAINT_TOWER;
     }
     return rng.nextInt(0, 3) == 0 ? UnitType.LEVEL_ONE_DEFENSE_TOWER :
@@ -446,6 +435,7 @@ public class Soldier extends MovableUnit {
       }
   }
 
+  // todo omg the lines can overlap?? like the edges can be shared between two boosts
   // 2 2 1 2 2
   // 2 1 1 1 2
   // 1 1 2 1 1
