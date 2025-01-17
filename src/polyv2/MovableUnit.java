@@ -1,4 +1,4 @@
-package poly;
+package polyv2;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,11 +80,6 @@ public abstract class MovableUnit extends Unit {
         directionGoing = directionGoing.rotateLeft().rotateLeft();
       } else {
         directionGoing = directionGoing.rotateRight().rotateRight();
-      }
-    }
-    if (turnsMovingInDirection > (rc.getMapHeight() + rc.getMapWidth()) / 7) {
-      if (lib.detectWall(rc.getLocation()) != Direction.CENTER) {
-        directionGoing = lib.detectWall(rc.getLocation());
       }
     }
   }
