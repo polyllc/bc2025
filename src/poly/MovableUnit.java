@@ -2,6 +2,7 @@ package poly;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import battlecode.common.Direction;
@@ -98,6 +99,29 @@ public abstract class MovableUnit extends Unit {
         }
       }
     }
+  }
+
+  // updates list in Lib for where ally towers are
+  protected void updateAllySpawns() throws GameActionException {
+    lib.spawnLocations = towerLocations;
+    lib.autofillEnemySpawnPoints(spawnedTower);
+  }
+
+  // gets the direction of the average enemy tower location
+  // aka where the most "noise" is
+  protected Direction averageEnemyTower() throws GameActionException {
+    List<MapLocation> enemyTowers = lib.enemyTowerLocations();
+    int x = 0;
+    int y = 0;
+    for (MapLocation tower: enemyTowers) {
+      x+= tower.x;
+      y+= tower.y;
+    }
+    x = x / enemyTowers.size();
+    y = y / enemyTowers.size();
+
+    MapLocation averageLoc = new MapLocation(x, y);
+    return rc.getLocation().directionTo(averageLoc);
   }
 
 }

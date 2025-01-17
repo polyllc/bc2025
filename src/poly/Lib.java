@@ -13,7 +13,8 @@ public class Lib {
 
   int roundNum;
   int[] lastRoundNum = new int[5];
-  MapLocation spawnLocations[];
+  List<MapLocation> spawnLocations;
+  List<MapLocation> enemyTowers;
 
   final MapLocation center;
 
@@ -24,6 +25,7 @@ public class Lib {
   static MapLocation noLoc = new MapLocation(256,256);
 
   MapLocation oppositeMapLocation;
+
 
   public Lib(RobotController robot) throws GameActionException {
     rc = robot;
@@ -302,17 +304,20 @@ public class Lib {
   // - what is really cool is that the code is the exact same, except the quadrants will be different depending on the symmetry
 
 
-  // todo, somehow update this to bc2025
   private List<MapLocation> allySpawnZones() {
-    return List.of();
+    return spawnLocations;
   }
 
   private boolean isEnemyCenter(MapLocation loc) {
-    return false;
+    return enemyTowers.contains(loc);
   }
 
   private void setEnemyCenter(MapLocation loc) {
+    enemyTowers.add(loc);
+  }
 
+  public List<MapLocation> enemyTowerLocations() {
+    return enemyTowers;
   }
 
   public void preliminaryAutofillEnemySpawnPoints() throws GameActionException {
