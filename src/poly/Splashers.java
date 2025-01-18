@@ -137,22 +137,33 @@ public class Splashers extends MovableUnit {
     MapInfo[] infos = rc.senseNearbyMapInfos(center, 4);
     int score = 0;
     for (MapInfo info : infos) {
+
+      //if it is enemy paint and will be effected by the inner splash radius that can repaint
       if (info.getMapLocation().isWithinDistanceSquared(center, 2) &&
               info.getPaint().isEnemy()) {
         score += 4;
       }
-      if (!info.isPassable()) {
+      //if it is one of our towers or a wall
+      if (towerLocations.contains(info.getMapLocation()) || info.isWall()) {
         score -= 1;
       }
+      //if it is one of their towers
+      else if (!info.isPassable()) {
+        score += 5;
+      }
+      //if it is allied paint
       if (info.getPaint().isAlly()) {
         score -= 1;
       }
+      //if it is neutral paint
       if (!info.getPaint().isEnemy() && !info.getPaint().isAlly()) {
         score += 2;
       }
+      //if it is a mark
       if (info.getMark().isAlly()) {
         score -= 100;
       }
+      //if it is standing on non-allied paint
       if (rc.getLocation() == center && !info.getPaint().isAlly()) {
         score += 3;
       }
