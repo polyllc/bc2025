@@ -78,6 +78,7 @@ public class Mopper extends MovableUnit {
         nav.avoidEnemyPaint = true;
         explore();
         // TODO: something with edge finding to use the averageEnemyTower direction
+        // want to walk along edges to the center
       }
     }
     super.move();
