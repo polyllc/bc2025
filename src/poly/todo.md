@@ -1,5 +1,6 @@
 jessr
 - moppers
+  - mop up areas that could be boosts
 - keep bots away from each other
 
 quinny

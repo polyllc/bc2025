@@ -73,14 +73,14 @@ public abstract class Tower extends Unit {
 
   private void build() throws GameActionException {
 
-    if (rc.getRoundNum() < 200) {
+    if (rc.getRoundNum() < 200 && rc.getRoundNum() > 50) {
       for (MapInfo info : lib.nearbyTiles()) {
         if (!info.getPaint().isAlly() && info.getPaint() != PaintType.EMPTY) {
           if (mopperBuildCooldown <= 0) {
             for (Direction dir : lib.directionsToMiddle(rc.getLocation(), info.getMapLocation())) {
               if (rc.canBuildRobot(UnitType.MOPPER, rc.getLocation().add(dir).add(dir))) {
                 rc.buildRobot(UnitType.MOPPER, rc.getLocation().add(dir).add(dir));
-                mopperBuildCooldown = 20;
+                mopperBuildCooldown = 40;
               }
             }
           }
@@ -88,8 +88,24 @@ public abstract class Tower extends Unit {
       }
     }
 
-    System.out.println("cost to build: " + (1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)));
-    if (rc.getRoundNum() < 65 || rc.getMoney() > 1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)) {
+    //System.out.println("cost to build: " + (1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)));
+    if (rc.getRoundNum() < 65 || rc.getMoney() > 1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)) { // todo screw around with the directions at times
+      if (rc.getRoundNum() % 6 == 0 && rc.getRoundNum() > 300) {
+        for (Direction dir : lib.directionsToMiddle(rc.getLocation(), rc.getLocation().add(rc.getLocation().directionTo(lib.center).opposite()))) {
+          MapLocation loc = rc.getLocation().add(dir);
+          if (rc.getRoundNum() < 10) {
+            loc = loc.add(dir);
+          }
+          if (rc.canBuildRobot(getBestRobot(), loc)) {
+            rc.buildRobot(getBestRobot(), loc);
+            spawnedUnits++;
+          }
+          else if (rc.canBuildRobot(getBestRobot(), loc.add(dir.opposite()))) {
+            rc.buildRobot(getBestRobot(), loc.add(dir.opposite()));
+            spawnedUnits++;
+          }
+        }
+      }
       for (Direction dir : lib.directionsToMiddle(rc.getLocation(), lib.center)) {
         MapLocation loc = rc.getLocation().add(dir);
         if (rc.getRoundNum() < 10) {
