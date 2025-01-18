@@ -2,7 +2,9 @@ package poly;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.MapInfo;
 import battlecode.common.MapLocation;
+import battlecode.common.PaintType;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.UnitType;
@@ -14,6 +16,8 @@ public abstract class Tower extends Unit {
   protected int spawnTurn = 0;
 
   private int spawnedUnits = 0;
+
+  private int mopperBuildCooldown = 0;
 
   protected Tower(RobotController rc) throws GameActionException {
     super(rc);
@@ -31,7 +35,9 @@ public abstract class Tower extends Unit {
     }
 
     upgrade();
+    mopperBuildCooldown--;
 
+    clearMarksAroundMe();
   }
 
   private void attack() throws GameActionException {
@@ -66,9 +72,25 @@ public abstract class Tower extends Unit {
   }
 
   private void build() throws GameActionException {
+
+    if (rc.getRoundNum() < 200) {
+      for (MapInfo info : lib.nearbyTiles()) {
+        if (!info.getPaint().isAlly() && info.getPaint() != PaintType.EMPTY) {
+          if (mopperBuildCooldown <= 0) {
+            for (Direction dir : lib.directionsToMiddle(rc.getLocation(), info.getMapLocation())) {
+              if (rc.canBuildRobot(UnitType.MOPPER, rc.getLocation().add(dir).add(dir))) {
+                rc.buildRobot(UnitType.MOPPER, rc.getLocation().add(dir).add(dir));
+                mopperBuildCooldown = 20;
+              }
+            }
+          }
+        }
+      }
+    }
+
     System.out.println("cost to build: " + (1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)));
     if (rc.getRoundNum() < 65 || rc.getMoney() > 1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)) {
-      for (Direction dir : lib.directionsToMiddle(rc.getLocation())) {
+      for (Direction dir : lib.directionsToMiddle(rc.getLocation(), lib.center)) {
         MapLocation loc = rc.getLocation().add(dir);
         if (rc.getRoundNum() < 10) {
           loc = loc.add(dir);
@@ -87,6 +109,7 @@ public abstract class Tower extends Unit {
 
   // todo, update
   private UnitType getBestRobot() {
+
     if (rc.getRoundNum() < 100) {
       return UnitType.SOLDIER;
     }
@@ -100,13 +123,59 @@ public abstract class Tower extends Unit {
   }
 
   private void upgrade() throws GameActionException {
-    if (rc.getMoney() > 3000) {
+    if (rc.getMoney() > 1700) {
       if (rc.canUpgradeTower(rc.getLocation())) {
         rc.upgradeTower(rc.getLocation());
       }
     }
   }
 
+  private void clearMarksAroundMe() throws GameActionException {
+    for (Direction dir : Lib.directions) {
+      for (Direction d : Lib.directionsCenter) {
+        MapLocation newLoc = rc.getLocation().add(dir).add(d);
+        if (rc.canMark(newLoc)) {
+          rc.mark(newLoc, getPaintMarker(newLoc));
+        }
+      }
+    }
+  }
+
+  private boolean getPaintMarker(MapLocation loc) {
+    if (loc.x % 4 == 0) { // 1st column
+      if ((loc.y - 2) % 4 == 0) {
+        return false;
+      }
+      return true;
+    }
+    else {
+      boolean col24 = (loc.y - 4) % 4 == 0 || loc.y % 4 == 0;
+      if ((loc.x - 1) % 4 == 0) { // 2nd column
+        if (col24) { //1st and 5th row
+          return true;
+        }
+        return false;
+      }
+      else if ((loc.x - 2) % 4 == 0) { // 3rd column
+        if ((loc.y - 2) % 4 == 0) {
+          return true;
+        }
+        return false;
+      }
+      else if ((loc.x - 3) % 4 == 0) { // 4th column
+        if (col24) { //1st and 5th row
+          return true;
+        }
+        return false;
+      }
+      else {
+        if ((loc.y - 2) % 4 == 0) {
+          return false;
+        }
+        return true;
+      }
+    }
+  }
 
 }
 
