@@ -176,6 +176,7 @@ public class Soldier extends MovableUnit {
     if (rc.getLocation().distanceSquaredTo(locationGoing) < 20) {
       if (rc.canSenseRobotAtLocation(locationGoing)) {
         if (rc.senseRobotAtLocation(locationGoing).getPaintAmount() < 40) {
+          addEmptySpots();
           emptySpots.sort((a, b) -> a.distanceSquaredTo(rc.getLocation()) - b.distanceSquaredTo(rc.getLocation()));
           currentTask = previousTask;
           locationGoing = previousLocationGoing;
@@ -237,6 +238,15 @@ public class Soldier extends MovableUnit {
       else {
         Arrays.sort(possiblePaintLocations, (a, b) -> a.getMapLocation().distanceSquaredTo(rc.getLocation()) - b.getMapLocation().distanceSquaredTo(rc.getLocation()));
       }
+
+      boolean isNotRuin = true;
+      MapLocation ruin = rc.getLocation();
+      for (MapInfo loc : lib.nearbyTiles()) {
+        if (loc.hasRuin()) {
+          isNotRuin = false;
+        }
+      }
+
       for (MapInfo loc : possiblePaintLocations) {
 
         if (loc.getPaint() == PaintType.EMPTY) {
@@ -245,9 +255,15 @@ public class Soldier extends MovableUnit {
           }
         }
 
+        if (!isNotRuin) {
+          if (rc.getLocation().directionTo(ruin) != rc.getLocation().directionTo(loc.getMapLocation())) {
+            isNotRuin = true;
+          }
+        }
+
         if (loc.getPaint().isAlly()) {
-          if (loc.getMark() != loc.getPaint()) {
-            if (paintType(loc.getPaint()) != getPaintMarker(loc.getMapLocation())) {
+          if (loc.getMark() != loc.getPaint() || isNotRuin) {
+            if (paintType(loc.getPaint()) != getPaintMarker(loc.getMapLocation())) { // todo you may paint if its not a ruin
               if (rc.canAttack(loc.getMapLocation())) {
                 rc.attack(loc.getMapLocation(), getPaintMarker(loc.getMapLocation()));
               }
@@ -281,7 +297,7 @@ public class Soldier extends MovableUnit {
       }
 
       int completedSpots = 0;
-      // Fill in any spots in the pattern with the appropriate paint.
+      // todo make sure that they dont clump together when painting so that they don't lose paint
       for (MapInfo patternTile : rc.senseNearbyMapInfos(targetLoc, 8)) {
         if (patternTile.getMark() != patternTile.getPaint() && patternTile.getMark() != PaintType.EMPTY) {
           if (patternTile.getPaint() != PaintType.ENEMY_PRIMARY && patternTile.getPaint() != PaintType.ENEMY_SECONDARY) {
@@ -418,7 +434,7 @@ public class Soldier extends MovableUnit {
             emptySpots.removeFirst();
           }
         }
-        if (rc.getRoundNum() > 200 && rc.getRoundNum() % (emptySpots.size() * 2) + 1 == 0) {
+        if (rc.getRoundNum() > 200 && rc.getRoundNum() % (emptySpots.size()) + 1 == 0) {
           addEmptySpots();
         }
       }
@@ -508,7 +524,7 @@ public class Soldier extends MovableUnit {
     for (RobotInfo robot : lib.getRobots(false)) {
       if (robot.getTeam() != rc.getTeam()) {
         if (lib.isTower(robot.getType())) {
-          if (rc.getRoundNum() > 500 || rc.getNumberTowers() > 20) {
+          if (rc.getRoundNum() > 200 || rc.getNumberTowers() > 20) {
             if (locationGoing == Lib.noLoc) {
               locationGoing = robot.getLocation();
               nav.avoidEnemyPaint = false;
