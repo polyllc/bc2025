@@ -60,9 +60,30 @@ public class Lib {
           Direction.NORTHWEST,
   };
 
-  public Direction[] directionsToMiddle(MapLocation loc) {
-    Direction dirToCenter = loc.directionTo(center);
-    return startDirList(Arrays.asList(directions).indexOf(dirToCenter), 8);
+  public Direction[] directionsToMiddle(MapLocation loc, MapLocation middle) { // hard coding because whatever and it saves bytecode
+    Direction dirToCenter = loc.directionTo(middle);
+    if (dirToCenter == Direction.CENTER) {
+      dirToCenter = directions[(int) Math.floor(Math.random() * 7)];
+    }
+    switch (dirToCenter) {
+      case NORTH:
+        return new Direction[]{Direction.NORTH, Direction.NORTHEAST, Direction.NORTHWEST, Direction.EAST, Direction.WEST, Direction.SOUTHEAST, Direction.SOUTHWEST, Direction.SOUTH};
+      case NORTHEAST:
+        return new Direction[]{Direction.NORTHEAST, Direction.EAST, Direction.NORTH, Direction.SOUTHEAST, Direction.NORTHWEST, Direction.SOUTH, Direction.WEST, Direction.SOUTHWEST};
+      case EAST:
+        return new Direction[]{Direction.EAST, Direction.SOUTHEAST, Direction.NORTHEAST, Direction.SOUTH, Direction.NORTH, Direction.SOUTHWEST, Direction.NORTHWEST, Direction.WEST};
+      case SOUTHEAST:
+        return new Direction[]{Direction.SOUTHEAST, Direction.SOUTH, Direction.EAST, Direction.SOUTHWEST, Direction.NORTHEAST, Direction.WEST, Direction.NORTH, Direction.NORTHWEST};
+      case SOUTH:
+        return new Direction[]{Direction.SOUTH, Direction.SOUTHWEST, Direction.SOUTHEAST, Direction.WEST, Direction.EAST, Direction.NORTHWEST, Direction.NORTHEAST, Direction.NORTH};
+      case SOUTHWEST:
+        return new Direction[]{Direction.SOUTHWEST, Direction.WEST, Direction.SOUTH, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.NORTH, Direction.EAST, Direction.NORTHEAST};
+      case WEST:
+        return new Direction[]{Direction.WEST, Direction.NORTHWEST, Direction.SOUTHWEST, Direction.NORTH, Direction.SOUTH, Direction.NORTHEAST, Direction.SOUTHEAST, Direction.EAST};
+      case NORTHWEST:
+        return new Direction[]{Direction.NORTHWEST, Direction.NORTH, Direction.WEST, Direction.NORTHEAST, Direction.SOUTHEAST, Direction.EAST, Direction.SOUTH, Direction.SOUTHEAST};
+    }
+    return directions;
   }
 
   public int getQuadrant(){

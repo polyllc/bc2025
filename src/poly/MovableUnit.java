@@ -106,6 +106,29 @@ public abstract class MovableUnit extends Unit {
     }
   }
 
+
+  protected Direction getRushDirection() {
+
+    int myQuadrant = lib.getQuadrant();
+    int towerQuadrant = lib.getQuadrant(spawnedTower);
+
+    if (myQuadrant != towerQuadrant) {
+      if (myQuadrant == 1 && towerQuadrant == 4 || myQuadrant == 4 && towerQuadrant == 1) {
+        return Direction.WEST;
+      }
+      else if (myQuadrant == 1 && towerQuadrant == 2 || myQuadrant == 2 && towerQuadrant == 1) {
+        return Direction.SOUTH;
+      }
+      else if (myQuadrant == 2 && towerQuadrant == 3 || myQuadrant == 3 && towerQuadrant == 2) {
+        return Direction.EAST;
+      }
+      else {
+        return Direction.NORTH;
+      }
+    }
+
+    return rc.getLocation().directionTo(lib.center);
+}
   // updates list in Lib for where ally towers are
   protected void updateAllySpawns() throws GameActionException {
     lib.spawnLocations = towerLocations;
