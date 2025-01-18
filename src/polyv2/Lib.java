@@ -1,4 +1,4 @@
-package poly;
+package polyv2;
 
 
 import battlecode.common.*;
@@ -13,8 +13,7 @@ public class Lib {
 
   int roundNum;
   int[] lastRoundNum = new int[5];
-  List<MapLocation> spawnLocations;
-  List<MapLocation> enemyTowers;
+  MapLocation spawnLocations[];
 
   final MapLocation center;
 
@@ -25,7 +24,6 @@ public class Lib {
   static MapLocation noLoc = new MapLocation(256,256);
 
   MapLocation oppositeMapLocation;
-
 
   public Lib(RobotController robot) throws GameActionException {
     rc = robot;
@@ -304,20 +302,17 @@ public class Lib {
   // - what is really cool is that the code is the exact same, except the quadrants will be different depending on the symmetry
 
 
+  // todo, somehow update this to bc2025
   private List<MapLocation> allySpawnZones() {
-    return spawnLocations;
+    return List.of();
   }
 
   private boolean isEnemyCenter(MapLocation loc) {
-    return enemyTowers.contains(loc);
+    return false;
   }
 
   private void setEnemyCenter(MapLocation loc) {
-    enemyTowers.add(loc);
-  }
 
-  public List<MapLocation> enemyTowerLocations() {
-    return enemyTowers;
   }
 
   public void preliminaryAutofillEnemySpawnPoints() throws GameActionException {
@@ -538,22 +533,6 @@ public class Lib {
         }
       }
     }
-  }
-
-  public Direction detectWall(MapLocation loc) {
-    if (loc.y == 0) {
-      return Direction.NORTH;
-    }
-    else if (loc.x == 1) {
-      return Direction.EAST;
-    }
-    else if (loc.y == rc.getMapHeight() - 1) {
-      return Direction.SOUTH;
-    }
-    else if (loc.x == rc.getMapWidth() - 1) {
-      return Direction.WEST;
-    }
-    return Direction.CENTER;
   }
 
 }

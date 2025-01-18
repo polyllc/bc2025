@@ -1,4 +1,4 @@
-package poly;
+package polyv3;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -74,7 +74,7 @@ public class Soldier extends MovableUnit {
       }
     }
 
-    nav.avoidEnemyPaint = true;
+    nav.avoidEnemyPaint = false;
   //  nav.avoidEnemyTowers = true;
     // todo, the tower that spawn this robot might have an objective
     //  which may be in a message sent on over
@@ -86,6 +86,9 @@ public class Soldier extends MovableUnit {
 
     if (rc.getRoundNum() > 600) {
     //  rc.resign();
+    }
+    if (rc.getRoundNum() > 100) {
+      nav.avoidEnemyPaint = true;
     }
 
     updateNearbyTowers();

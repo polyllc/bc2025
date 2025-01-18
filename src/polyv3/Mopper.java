@@ -1,4 +1,4 @@
-package poly;
+package polyv3;
 
 import battlecode.common.*;
 import battlecode.schema.RobotType;
@@ -78,10 +78,7 @@ public class Mopper extends MovableUnit {
 
       }
       else {
-        nav.avoidEnemyPaint = true;
         explore();
-        // TODO: something with edge finding to use the averageEnemyTower direction
-        // want to walk along edges to the center
       }
     }
     super.move();
@@ -114,10 +111,14 @@ public class Mopper extends MovableUnit {
       }
     }
 
+    // why dont you work
+    /*
     if (rc.getPaint() > 51) {
       currentTask = MopperTask.TRANSFER;
       return;
     }
+
+     */
 
     currentTask = MopperTask.EXPLORING;
   }
@@ -140,12 +141,11 @@ public class Mopper extends MovableUnit {
           return;
         }
         if (bot.getType() == UnitType.LEVEL_ONE_MONEY_TOWER || bot.type == UnitType.LEVEL_TWO_MONEY_TOWER
-            || bot.getType() == UnitType.LEVEL_THREE_MONEY_TOWER) {
+        || bot.getType() == UnitType.LEVEL_THREE_MONEY_TOWER) {
           rc.transferPaint(bot.getLocation(), amountPaintAboveHalf);
           locationGoing = Lib.noLoc;
           return;
         }
-
 
         currentTask = MopperTask.EXPLORING;
         return;
@@ -153,7 +153,6 @@ public class Mopper extends MovableUnit {
       locationGoing = bot.getLocation();
       return;
     }
-    currentTask = MopperTask.EXPLORING;
 
   }
 
@@ -305,29 +304,27 @@ public class Mopper extends MovableUnit {
     // n e s w
 
     for (Direction d : Lib.directions) {
-      if (rc.canSenseLocation(rc.getLocation().add(d))) {
-        if (rc.senseMapInfo(rc.getLocation().add(d)).getPaint() == PaintType.ENEMY_PRIMARY ||
-            rc.senseMapInfo(rc.getLocation().add(d)).getPaint() == PaintType.ENEMY_SECONDARY) {
-          switch (d) {
-            case NORTHEAST:
-            case NORTH:
-            case NORTHWEST:
-              enemyInDirection[0]++;
-              break;
-            case SOUTH:
-            case SOUTHWEST:
-            case SOUTHEAST:
-              enemyInDirection[2]++;
-              break;
-            case EAST:
-              enemyInDirection[1]++;
-              break;
-            case WEST:
-              enemyInDirection[3]++;
-              break;
-            default:
-              break;
-          }
+      if (rc.senseMapInfo(rc.getLocation().add(d)).getPaint() == PaintType.ENEMY_PRIMARY ||
+          rc.senseMapInfo(rc.getLocation().add(d)).getPaint() == PaintType.ENEMY_SECONDARY) {
+        switch (d) {
+          case NORTHEAST:
+          case NORTH:
+          case NORTHWEST:
+            enemyInDirection[0]++;
+            break;
+          case SOUTH:
+          case SOUTHWEST:
+          case SOUTHEAST:
+            enemyInDirection[2]++;
+            break;
+          case EAST:
+            enemyInDirection[1]++;
+            break;
+          case WEST:
+            enemyInDirection[3]++;
+            break;
+          default:
+            break;
         }
       }
     }
@@ -348,5 +345,4 @@ public class Mopper extends MovableUnit {
       default -> Direction.WEST;
     };
   }
-
 }
