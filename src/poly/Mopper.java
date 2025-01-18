@@ -73,15 +73,21 @@ public class Mopper extends MovableUnit {
   @Override
   protected void move() throws GameActionException {
     if (currentTask == MopperTask.EXPLORING) {
-      if (rc.getNumberTowers() < 3) {
+      // hard coded for now
+      if (rc.getRoundNum() < 100) {
         currentTask = MopperTask.FOLLOW;
 
       }
       else {
-        nav.avoidEnemyPaint = true;
-        explore();
-        // TODO: something with edge finding to use the averageEnemyTower direction
-        // want to walk along edges to the center
+        //nav.avoidEnemyPaint = true;
+        if (rc.getRoundNum() % 100 < 10) {
+          locationGoing = averageEnemyTower();
+        }
+        else {
+          explore();
+        }
+
+        //locationGoing = averageEnemyTowerDirection();
       }
     }
     super.move();
@@ -190,6 +196,7 @@ public class Mopper extends MovableUnit {
         return;
       }
     }
+    currentTask = MopperTask.EXPLORING;
   }
 
 
@@ -210,7 +217,9 @@ public class Mopper extends MovableUnit {
   // if there are ties, chooses the first direction
   private void mopEnemies() throws GameActionException {
     Direction bestDir = numEnemiesInDir();
-    rc.mopSwing(bestDir);
+    if (rc.canMopSwing(bestDir)) {
+      rc.mopSwing(bestDir);
+    }
     if (rc.senseNearbyRobots(-1, rc.getTeam().opponent()).length == 0) {
       currentTask = MopperTask.EXPLORING;
     }
@@ -245,58 +254,6 @@ public class Mopper extends MovableUnit {
 
   }
 
-  /*
-  // counts how many enemy tiles are around and returns direction that has the most
-  private Direction numEnemyTiles() throws GameActionException {
-
-    int[] enemyTilesInDirection = {0, 0, 0, 0};
-    // n e s w
-
-    for (Direction d : Lib.directions) {
-      if (rc.senseMapInfo(rc.getLocation().add(d)).getPaint() == PaintType.ENEMY_PRIMARY ||
-          rc.senseMapInfo(rc.getLocation().add(d)).getPaint() == PaintType.ENEMY_SECONDARY) {
-        switch (d) {
-          case NORTHEAST:
-          case NORTH:
-          case NORTHWEST:
-            enemyTilesInDirection[0]++;
-            break;
-          case SOUTH:
-          case SOUTHWEST:
-          case SOUTHEAST:
-            enemyTilesInDirection[2]++;
-            break;
-          case EAST:
-            enemyTilesInDirection[1]++;
-            break;
-          case WEST:
-            enemyTilesInDirection[3]++;
-            break;
-          default:
-            break;
-        }
-      }
-    }
-
-    int dir = 0;
-    int maxEnemies = 0;
-    for (int i = 0; i < enemyTilesInDirection.length; i++) {
-      if (enemyTilesInDirection[i] > maxEnemies) {
-        dir = i;
-        maxEnemies = enemyTilesInDirection[i];
-      }
-    }
-
-    return switch (dir) {
-      case 0 -> Direction.NORTH;
-      case 1 -> Direction.EAST;
-      case 2 -> Direction.SOUTH;
-      default -> Direction.WEST;
-    };
-
-  }
-
-   */
 
   // counts how many enemy bots there are and returns direction with most
   private Direction numEnemiesInDir() throws GameActionException {

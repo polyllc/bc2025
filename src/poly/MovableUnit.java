@@ -137,7 +137,7 @@ public abstract class MovableUnit extends Unit {
 
   // gets the direction of the average enemy tower location
   // aka where the most "noise" is
-  protected Direction averageEnemyTower() throws GameActionException {
+  protected MapLocation averageEnemyTower() throws GameActionException {
     List<MapLocation> enemyTowers = lib.enemyTowerLocations();
     int x = 0;
     int y = 0;
@@ -149,7 +149,7 @@ public abstract class MovableUnit extends Unit {
     y = y / enemyTowers.size();
 
     MapLocation averageLoc = new MapLocation(x, y);
-    return rc.getLocation().directionTo(averageLoc);
+    return averageLoc;
   }
 
 }
