@@ -1,8 +1,7 @@
-package poly;
+package polyv3;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import battlecode.common.Direction;
@@ -104,52 +103,6 @@ public abstract class MovableUnit extends Unit {
         }
       }
     }
-  }
-
-
-  protected Direction getRushDirection() {
-
-    int myQuadrant = lib.getQuadrant();
-    int towerQuadrant = lib.getQuadrant(spawnedTower);
-
-    if (myQuadrant != towerQuadrant) {
-      if (myQuadrant == 1 && towerQuadrant == 4 || myQuadrant == 4 && towerQuadrant == 1) {
-        return Direction.WEST;
-      }
-      else if (myQuadrant == 1 && towerQuadrant == 2 || myQuadrant == 2 && towerQuadrant == 1) {
-        return Direction.SOUTH;
-      }
-      else if (myQuadrant == 2 && towerQuadrant == 3 || myQuadrant == 3 && towerQuadrant == 2) {
-        return Direction.EAST;
-      }
-      else {
-        return Direction.NORTH;
-      }
-    }
-
-    return rc.getLocation().directionTo(lib.center);
-}
-  // updates list in Lib for where ally towers are
-  protected void updateAllySpawns() throws GameActionException {
-    lib.spawnLocations = towerLocations;
-    lib.autofillEnemySpawnPoints(spawnedTower);
-  }
-
-  // gets the direction of the average enemy tower location
-  // aka where the most "noise" is
-  protected Direction averageEnemyTower() throws GameActionException {
-    List<MapLocation> enemyTowers = lib.enemyTowerLocations();
-    int x = 0;
-    int y = 0;
-    for (MapLocation tower: enemyTowers) {
-      x+= tower.x;
-      y+= tower.y;
-    }
-    x = x / enemyTowers.size();
-    y = y / enemyTowers.size();
-
-    MapLocation averageLoc = new MapLocation(x, y);
-    return rc.getLocation().directionTo(averageLoc);
   }
 
 }

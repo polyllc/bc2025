@@ -1,4 +1,4 @@
-package poly;
+package polyv3;
 
 
 import battlecode.common.*;
@@ -13,8 +13,7 @@ public class Lib {
 
   int roundNum;
   int[] lastRoundNum = new int[5];
-  List<MapLocation> spawnLocations;
-  List<MapLocation> enemyTowers;
+  MapLocation spawnLocations[];
 
   final MapLocation center;
 
@@ -25,7 +24,6 @@ public class Lib {
   static MapLocation noLoc = new MapLocation(256,256);
 
   MapLocation oppositeMapLocation;
-
 
   public Lib(RobotController robot) throws GameActionException {
     rc = robot;
@@ -60,30 +58,9 @@ public class Lib {
           Direction.NORTHWEST,
   };
 
-  public Direction[] directionsToMiddle(MapLocation loc, MapLocation middle) { // hard coding because whatever and it saves bytecode
-    Direction dirToCenter = loc.directionTo(middle);
-    if (dirToCenter == Direction.CENTER) {
-      dirToCenter = directions[(int) Math.floor(Math.random() * 7)];
-    }
-    switch (dirToCenter) {
-      case NORTH:
-        return new Direction[]{Direction.NORTH, Direction.NORTHEAST, Direction.NORTHWEST, Direction.EAST, Direction.WEST, Direction.SOUTHEAST, Direction.SOUTHWEST, Direction.SOUTH};
-      case NORTHEAST:
-        return new Direction[]{Direction.NORTHEAST, Direction.EAST, Direction.NORTH, Direction.SOUTHEAST, Direction.NORTHWEST, Direction.SOUTH, Direction.WEST, Direction.SOUTHWEST};
-      case EAST:
-        return new Direction[]{Direction.EAST, Direction.SOUTHEAST, Direction.NORTHEAST, Direction.SOUTH, Direction.NORTH, Direction.SOUTHWEST, Direction.NORTHWEST, Direction.WEST};
-      case SOUTHEAST:
-        return new Direction[]{Direction.SOUTHEAST, Direction.SOUTH, Direction.EAST, Direction.SOUTHWEST, Direction.NORTHEAST, Direction.WEST, Direction.NORTH, Direction.NORTHWEST};
-      case SOUTH:
-        return new Direction[]{Direction.SOUTH, Direction.SOUTHWEST, Direction.SOUTHEAST, Direction.WEST, Direction.EAST, Direction.NORTHWEST, Direction.NORTHEAST, Direction.NORTH};
-      case SOUTHWEST:
-        return new Direction[]{Direction.SOUTHWEST, Direction.WEST, Direction.SOUTH, Direction.NORTHWEST, Direction.SOUTHEAST, Direction.NORTH, Direction.EAST, Direction.NORTHEAST};
-      case WEST:
-        return new Direction[]{Direction.WEST, Direction.NORTHWEST, Direction.SOUTHWEST, Direction.NORTH, Direction.SOUTH, Direction.NORTHEAST, Direction.SOUTHEAST, Direction.EAST};
-      case NORTHWEST:
-        return new Direction[]{Direction.NORTHWEST, Direction.NORTH, Direction.WEST, Direction.NORTHEAST, Direction.SOUTHEAST, Direction.EAST, Direction.SOUTH, Direction.SOUTHEAST};
-    }
-    return directions;
+  public Direction[] directionsToMiddle(MapLocation loc) {
+    Direction dirToCenter = loc.directionTo(center);
+    return startDirList(Arrays.asList(directions).indexOf(dirToCenter), 8);
   }
 
   public int getQuadrant(){
@@ -325,20 +302,17 @@ public class Lib {
   // - what is really cool is that the code is the exact same, except the quadrants will be different depending on the symmetry
 
 
+  // todo, somehow update this to bc2025
   private List<MapLocation> allySpawnZones() {
-    return spawnLocations;
+    return List.of();
   }
 
   private boolean isEnemyCenter(MapLocation loc) {
-    return enemyTowers.contains(loc);
+    return false;
   }
 
   private void setEnemyCenter(MapLocation loc) {
-    enemyTowers.add(loc);
-  }
 
-  public List<MapLocation> enemyTowerLocations() {
-    return enemyTowers;
   }
 
   public void preliminaryAutofillEnemySpawnPoints() throws GameActionException {

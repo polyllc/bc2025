@@ -1,4 +1,4 @@
-package poly;
+package polyv3;
 
 import battlecode.common.*;
 

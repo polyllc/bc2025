@@ -1,4 +1,4 @@
-package poly;
+package polyv3;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -124,7 +124,6 @@ public class Soldier extends MovableUnit {
       gettingPaintRounds = 0;
       paint();
       nav.avoidNonAllyPaint = false;
-
     }
     move();
     checkToClearRuin();
@@ -138,51 +137,40 @@ public class Soldier extends MovableUnit {
     }
 
     if (currentTask == SoldierTask.GETTING_MORE_PAINT) {
-      getMorePaint();
+      if (gettingPaintRounds % 5 != 0) {
+        nav.avoidNonAllyPaint = true;
+        gettingPaintRounds++;
+      }
+      else {
+        nav.avoidNonAllyPaint = false;
+      }
+      senseBetterTowersToGetPaint();
+      if (rc.getLocation().distanceSquaredTo(locationGoing) < 3) {
+        RobotInfo towerInfo = rc.senseRobotAtLocation(locationGoing);
+        int max = getMax(towerInfo);
+        //max = Math.min(100, Math.max(towerInfo.getPaintAmount(), max));
+        if (rc.canTransferPaint(locationGoing, max)) {
+          rc.transferPaint(locationGoing, max);
+          currentTask = previousTask;
+          locationGoing = previousLocationGoing;
+          directionGoing = previousDirectionGoing;
+        }
+      }
+      if (rc.getLocation().distanceSquaredTo(locationGoing) < 20) {
+        if (rc.canSenseRobotAtLocation(locationGoing)) {
+          if (rc.senseRobotAtLocation(locationGoing).getPaintAmount() < 40) {
+            currentTask = previousTask;
+            locationGoing = previousLocationGoing;
+            directionGoing = previousDirectionGoing;
+          }
+        }
+      }
     }
 
 
 
     decreaseRuinRounds();
 
-  }
-
-  private void getMorePaint() throws GameActionException {
-    if (gettingPaintRounds % 5 != 0) {
-      nav.avoidNonAllyPaint = true;
-      gettingPaintRounds++;
-    }
-    else {
-      nav.avoidNonAllyPaint = false;
-    }
-    senseBetterTowersToGetPaint();
-
-    if (rc.getRoundNum() % ((emptySpots.size() * 2) + 3) == 0) {
-      addEmptySpots();
-    }
-
-
-    if (rc.getLocation().distanceSquaredTo(locationGoing) < 4) {
-      RobotInfo towerInfo = rc.senseRobotAtLocation(locationGoing);
-      int max = getMax(towerInfo);
-      //max = Math.min(100, Math.max(towerInfo.getPaintAmount(), max));
-      if (rc.canTransferPaint(locationGoing, max)) {
-        rc.transferPaint(locationGoing, max);
-        currentTask = previousTask;
-        locationGoing = previousLocationGoing;
-        directionGoing = previousDirectionGoing;
-      }
-    }
-    if (rc.getLocation().distanceSquaredTo(locationGoing) < 20) {
-      if (rc.canSenseRobotAtLocation(locationGoing)) {
-        if (rc.senseRobotAtLocation(locationGoing).getPaintAmount() < 40) {
-          emptySpots.sort((a, b) -> a.distanceSquaredTo(rc.getLocation()) - b.distanceSquaredTo(rc.getLocation()));
-          currentTask = previousTask;
-          locationGoing = previousLocationGoing;
-          directionGoing = previousDirectionGoing;
-        }
-      }
-    }
   }
 
   private int getMax(RobotInfo towerInfo) {
@@ -229,7 +217,12 @@ public class Soldier extends MovableUnit {
     // Avoiding wasting paint by re-painting our own tiles.
 
     if (rc.getRoundNum() > 40 || rc.getPaint() < 140) {
-
+      MapInfo ownLoc = rc.senseMapInfo(rc.getLocation());
+      if (ownLoc.getPaint() == PaintType.EMPTY && rc.canAttack(rc.getLocation())) {
+        boolean useSecondaryColor = ownLoc.getMark() == PaintType.ALLY_SECONDARY;
+       // rc.attack(rc.getLocation(), useSecondaryColor);
+        //return;
+      }
       MapInfo[] possiblePaintLocations = rc.senseNearbyMapInfos(8);
       if (currentTask == SoldierTask.PAINTING_RUIN) {
         Arrays.sort(possiblePaintLocations, (a, b) -> b.getMapLocation().distanceSquaredTo(rc.getLocation()) - a.getMapLocation().distanceSquaredTo(rc.getLocation()));
@@ -246,11 +239,9 @@ public class Soldier extends MovableUnit {
         }
 
         if (loc.getPaint().isAlly()) {
-          if (loc.getMark() != loc.getPaint()) {
-            if (paintType(loc.getPaint()) != getPaintMarker(loc.getMapLocation())) {
-              if (rc.canAttack(loc.getMapLocation())) {
-                rc.attack(loc.getMapLocation(), getPaintMarker(loc.getMapLocation()));
-              }
+          if (paintType(loc.getPaint()) != getPaintMarker(loc.getMapLocation())) {
+            if (rc.canAttack(loc.getMapLocation())) {
+              rc.attack(loc.getMapLocation(), getPaintMarker(loc.getMapLocation()));
             }
           }
         }
@@ -419,18 +410,14 @@ public class Soldier extends MovableUnit {
           }
         }
         if (rc.getRoundNum() > 200 && rc.getRoundNum() % (emptySpots.size() * 2) + 1 == 0) {
-          addEmptySpots();
-        }
-      }
-    }
-  }
-
-  private void addEmptySpots() {
-    for (MapInfo tile : lib.nearbyTiles()) {
-      if (tile.isPassable()) {
-        if (tile.getPaint() == PaintType.EMPTY) { // todo, make this more random
-          if (!emptySpots.contains(tile.getMapLocation())) {
-            emptySpots.add(tile.getMapLocation());
+          for (MapInfo tile : nearbyTiles) {
+            if (tile.isPassable()) {
+              if (tile.getPaint() == PaintType.EMPTY) { // todo, make this more random
+                if (!emptySpots.contains(tile.getMapLocation())) {
+                  emptySpots.add(tile.getMapLocation());
+                }
+              }
+            }
           }
         }
       }
@@ -508,12 +495,6 @@ public class Soldier extends MovableUnit {
     for (RobotInfo robot : lib.getRobots(false)) {
       if (robot.getTeam() != rc.getTeam()) {
         if (lib.isTower(robot.getType())) {
-          if (rc.getRoundNum() > 500 || rc.getNumberTowers() > 20) {
-            if (locationGoing == Lib.noLoc) {
-              locationGoing = robot.getLocation();
-              nav.avoidEnemyPaint = false;
-            }
-          }
           if (rc.canAttack(robot.getLocation())) {
             rc.attack(robot.getLocation());
           }
