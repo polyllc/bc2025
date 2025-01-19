@@ -252,7 +252,7 @@ public class Mopper extends MovableUnit {
     }
 
      */
-    currentTask = MopperTask.EXPLORING;
+    //currentTask = MopperTask.EXPLORING;
 
   }
 
