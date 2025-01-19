@@ -27,7 +27,8 @@ public class Soldier extends MovableUnit {
     WAITING_TO_BUILD_RUIN,
     GETTING_MORE_PAINT,
     WAITING_FOR_FUNDS,
-    ATTACKING_ENEMY_BASE
+    ATTACKING_ENEMY_BASE,
+    FILLING_IN_BOOST
   }
 
   static final Random rng = new Random(6147);
@@ -84,11 +85,11 @@ public class Soldier extends MovableUnit {
   @Override
   public void takeTurn() throws GameActionException {
 
-    if (rc.getRoundNum() > 600) {
-    //  rc.resign();
+    if (rc.getRoundNum() > 800) {
+      //rc.resign();
     }
     if (rc.getRoundNum() > 100) {
-      nav.avoidEnemyPaint = true;
+     // nav.avoidEnemyPaint = true;
     }
 
     updateNearbyTowers();
@@ -102,8 +103,21 @@ public class Soldier extends MovableUnit {
       searchForRuin();
     }
 
+
+
+    if (currentTask == SoldierTask.FILLING_IN_BOOST) {
+      if (rc.getLocation().distanceSquaredTo(locationGoing) < 5) {
+        currentTask = SoldierTask.EXPLORING;
+        locationGoing = Lib.noLoc;
+      }
+    }
+
+
     if (currentTask == SoldierTask.EXPLORING) {
       locationGoing = Lib.noLoc;
+      if (rc.getRoundNum() > 100 || rc.getNumberTowers() > 8) {
+       // senseBoostLocationsToFill();
+      }
       goTowardsEmptySpots();
     }
 
@@ -134,6 +148,7 @@ public class Soldier extends MovableUnit {
       previousLocationGoing = locationGoing;
       previousDirectionGoing = directionGoing;
       currentTask = SoldierTask.GETTING_MORE_PAINT;
+      nav.avoidEnemyPaint = true;
       locationGoing = spawnedTower;
     }
 
@@ -176,8 +191,7 @@ public class Soldier extends MovableUnit {
     if (rc.getLocation().distanceSquaredTo(locationGoing) < 20) {
       if (rc.canSenseRobotAtLocation(locationGoing)) {
         if (rc.senseRobotAtLocation(locationGoing).getPaintAmount() < 40) {
-          addEmptySpots();
-          emptySpots.sort((a, b) -> a.distanceSquaredTo(rc.getLocation()) - b.distanceSquaredTo(rc.getLocation()));
+          //emptySpots.sort((a, b) -> a.distanceSquaredTo(rc.getLocation()) - b.distanceSquaredTo(rc.getLocation()));
           currentTask = previousTask;
           locationGoing = previousLocationGoing;
           directionGoing = previousDirectionGoing;
@@ -196,6 +210,39 @@ public class Soldier extends MovableUnit {
     }
     return max;
   }
+
+
+  private void senseBoostLocationsToFill() throws GameActionException {
+    for (MapInfo info : lib.nearbyTiles()) {
+      if ((info.getMapLocation().x - 2) % 4 == 0 && (info.getMapLocation().y - 2) % 4 == 0) {
+        int numTilesFilled = 0;
+        boolean valid = true;
+        for (MapInfo patternTile : rc.senseNearbyMapInfos(info.getMapLocation(), 8)) {
+          if (patternTile.hasRuin()) {
+            valid = false;
+            break;
+          }
+          if (lib.isEnemyPaint(patternTile.getMapLocation())) {
+            valid = false;
+            break;
+          }
+          if (rc.canSenseRobotAtLocation(patternTile.getMapLocation())) {
+            valid = false;
+            break;
+          }
+          if (patternTile.getPaint() != PaintType.EMPTY) {
+            numTilesFilled++;
+          }
+        }
+        if (numTilesFilled < 25 && valid) {
+          locationGoing = info.getMapLocation();
+          currentTask = SoldierTask.FILLING_IN_BOOST;
+          return;
+        }
+      }
+    }
+  }
+
 
   private void senseBetterTowersToGetPaint() throws GameActionException {
     for (MapLocation towers : towerLocations) {
@@ -216,6 +263,7 @@ public class Soldier extends MovableUnit {
   }
 
   private void paint() throws GameActionException {
+    attackEnemyTowers();
     if (currentTask == SoldierTask.PAINTING_RUIN && currentRuin != null) {
       paintRuin();
     }
@@ -225,12 +273,11 @@ public class Soldier extends MovableUnit {
       }
       resourcePatternPainting();
     }
-    attackEnemyTowers();
+
     // Try to paint beneath us as we walk to avoid paint penalties.
     // Avoiding wasting paint by re-painting our own tiles.
 
     if (rc.getRoundNum() > 40 || rc.getPaint() < 140) {
-
       MapInfo[] possiblePaintLocations = rc.senseNearbyMapInfos(8);
       if (currentTask == SoldierTask.PAINTING_RUIN) {
         Arrays.sort(possiblePaintLocations, (a, b) -> b.getMapLocation().distanceSquaredTo(rc.getLocation()) - a.getMapLocation().distanceSquaredTo(rc.getLocation()));
@@ -263,7 +310,7 @@ public class Soldier extends MovableUnit {
 
         if (loc.getPaint().isAlly()) {
           if (loc.getMark() != loc.getPaint() || isNotRuin) {
-            if (paintType(loc.getPaint()) != getPaintMarker(loc.getMapLocation())) { // todo you may paint if its not a ruin
+            if (paintType(loc.getPaint()) != getPaintMarker(loc.getMapLocation())) {
               if (rc.canAttack(loc.getMapLocation())) {
                 rc.attack(loc.getMapLocation(), getPaintMarker(loc.getMapLocation()));
               }
@@ -332,6 +379,14 @@ public class Soldier extends MovableUnit {
         }
         rc.setTimelineMarker("Tower built", 0, 255, 0);
         System.out.println("Built a tower at " + targetLoc + "!");
+
+
+        if (rc.getLocation().distanceSquaredTo(currentRuin.getMapLocation()) < 3) {
+          if (rc.canTransferPaint(currentRuin.getMapLocation(), getMax(rc.senseRobotAtLocation(currentRuin.getMapLocation())))) {
+            rc.transferPaint(currentRuin.getMapLocation(), getMax(rc.senseRobotAtLocation(currentRuin.getMapLocation())));
+          }
+        }
+
         currentTask = SoldierTask.EXPLORING;
         locationGoing = Lib.noLoc;
         currentRuin = null;
@@ -434,7 +489,7 @@ public class Soldier extends MovableUnit {
             emptySpots.removeFirst();
           }
         }
-        if (rc.getRoundNum() > 200 && rc.getRoundNum() % (emptySpots.size()) + 1 == 0) {
+        if (rc.getRoundNum() > 200 && rc.getRoundNum() % ((emptySpots.size()) + 1) == 0) {
           addEmptySpots();
         }
       }

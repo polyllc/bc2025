@@ -66,7 +66,7 @@ public abstract class Tower extends Unit {
   }
 
   private void build() throws GameActionException {
-    System.out.println("cost to build: " + (1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)));
+   // System.out.println("cost to build: " + (1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)));
     if (rc.getRoundNum() < 65 || rc.getMoney() > 1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)) {
       for (Direction dir : lib.directionsToMiddle(rc.getLocation())) {
         MapLocation loc = rc.getLocation().add(dir);

@@ -35,7 +35,7 @@ public class Splashers extends MovableUnit {
     lib.resourcePatternPainting();
     updateNearbyTowers();
 
-    if (rc.getPaint() < 51) {
+    if (rc.getPaint() < 51 && currentTask != SplasherTask.GOING_BACK_TO_PAINT_TOWER) {
       getNearestPaintTower();
       if (nearestPaintTower != Lib.noLoc) {
         locationGoing = nearestPaintTower;
@@ -49,6 +49,15 @@ public class Splashers extends MovableUnit {
 
     if (currentTask == SplasherTask.GOING_BACK_TO_TOWER) {
       getNearestPaintTower();
+      if (rc.canSenseRobotAtLocation(locationGoing)) {
+        RobotInfo tower = rc.senseRobotAtLocation(locationGoing);
+        if (tower.getPaintAmount() < 50 && (tower.getType() == UnitType.LEVEL_ONE_MONEY_TOWER || tower.getType() == UnitType.LEVEL_TWO_MONEY_TOWER || tower.getType() == UnitType.LEVEL_THREE_MONEY_TOWER)) {
+          paintTowerLocations.remove(locationGoing);
+          locationGoing = Lib.noLoc;
+          currentTask = SplasherTask.EXPLORE;
+          return;
+        }
+      }
       if (nearestPaintTower != Lib.noLoc) {
         locationGoing = nearestPaintTower;
         currentTask = SplasherTask.GOING_BACK_TO_PAINT_TOWER;
@@ -72,6 +81,19 @@ public class Splashers extends MovableUnit {
     move();
 
     if (currentTask == SplasherTask.EXPLORE) {
+      if (rc.getRoundNum() > 400) {
+      //  locationGoing = lib.rotationalCalc(spawnedTower);
+      }
+
+      if (directionGoing == Direction.CENTER) {
+        //directionGoing = getRushDirection();
+      }
+      if (Direction.CENTER == findEnemyPaintGroupToExplore( RobotPlayer.turnCount > (rc.getMapHeight() + rc.getMapWidth()) / 2)) {
+        //directionGoing = getRushDirection();
+      }
+      if (rc.getRoundNum() % 10 == 0) {
+        declumpFromAllies();
+      }
       paint();
     }
 
@@ -81,7 +103,7 @@ public class Splashers extends MovableUnit {
     if (!paintTowerLocations.isEmpty()) {
       int distance = rc.getLocation().distanceSquaredTo(paintTowerLocations.get(0));
       for (MapLocation tower : paintTowerLocations) {
-        if (distance > rc.getLocation().distanceSquaredTo(tower)) {
+        if (distance < rc.getLocation().distanceSquaredTo(tower)) {
           nearestPaintTower = tower;
           distance = rc.getLocation().distanceSquaredTo(tower);
         }
@@ -90,6 +112,21 @@ public class Splashers extends MovableUnit {
     else {
       nearestPaintTower = Lib.noLoc;
     }
+
+    /*
+    try {
+      for (MapLocation tower : towerLocations) {
+        if (rc.senseRobotAtLocation(tower).getType().equals(UnitType.LEVEL_ONE_PAINT_TOWER) ||
+                rc.senseRobotAtLocation(tower).getType().equals(UnitType.LEVEL_TWO_PAINT_TOWER) ||
+                rc.senseRobotAtLocation(tower).getType().equals(UnitType.LEVEL_THREE_PAINT_TOWER)) {
+          nearestPaintTower = tower;
+        }
+      }
+    }
+    catch (GameActionException e) {
+      nearestPaintTower = Lib.noLoc;
+    }
+     */
 
   }
 
@@ -100,7 +137,37 @@ public class Splashers extends MovableUnit {
 
   }
 
+  private boolean splashEnemyPaint() throws GameActionException {
+    for (Direction dir : Lib.directionsCenter) {
+      if (rc.canSenseLocation(rc.getLocation().add(dir))) {
+        MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
+        if (!currentTile.getPaint().isAlly() && rc.canAttack(currentTile.getMapLocation())) {
+          rc.attack(currentTile.getMapLocation());
+          return true;
+        }
+      }
+    }
+
+    for (Direction dir : Lib.directionsCenter) {
+      if (rc.canSenseLocation(rc.getLocation().add(dir).add(dir))) {
+        MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
+        if (!currentTile.getPaint().isAlly() && rc.canAttack(currentTile.getMapLocation())) {
+          //above if should be lib.isEnemyPaint() when made
+          rc.attack(currentTile.getMapLocation());
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   private void splashWorld() throws GameActionException {
+
+    //if the splasher is standing on non-allied paint, splash that area IMMEDIATELY (self preservation)
+    if (!rc.senseMapInfo(rc.getLocation()).getPaint().isAlly() && rc.canAttack(rc.getLocation())) {
+      attack(rc.getLocation());
+    }
 
     //check the nearby map infos and see which one produces the best score
     MapInfo[] infos = rc.senseNearbyMapInfos(4);
@@ -115,20 +182,48 @@ public class Splashers extends MovableUnit {
     }
 
     //if the score isnt above 4, it isnt worth an attack, keep searching
-    if (maxScore > 3 && rc.canAttack(maxLocation)) {
+    if (maxScore > 4 && rc.canAttack(maxLocation)) {
       attack(maxLocation);
     }
+
+    //old code, delete later if above works
+    /*
+    for (Direction dir : Lib.directionsCenter) {
+      if (rc.canSenseLocation(rc.getLocation().add(dir).add(dir))) {
+        MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
+        if (currentTile.isPassable() && !currentTile.getPaint().isAlly() && rc.canAttack(currentTile.getMapLocation())) {
+          attack(currentTile.getMapLocation());
+        }
+      }
+    }
+
+    for (Direction dir : Lib.directionsCenter) {
+      if (rc.canSenseLocation(rc.getLocation().add(dir))) {
+        MapInfo currentTile = rc.senseMapInfo(rc.getLocation().add(dir));
+        if (!currentTile.isPassable() && !currentTile.getPaint().isAlly() && rc.canAttack(currentTile.getMapLocation())) {
+          attack(currentTile.getMapLocation());
+        }
+      }
+    }
+     */
 
   }
 
   private void attack(MapLocation loc) throws GameActionException {
+    /*
+    for (MapInfo info : rc.senseNearbyMapInfos(loc, 8)) {
+      if (info.getMark().isAlly()) {
+        return;
+      }
+    }
+     */
     rc.attack(loc);
   }
 
   protected void move() throws GameActionException {
     if (currentTask == SplasherTask.EXPLORE) {
       explore();
-      locationGoing = Lib.noLoc;
+      //locationGoing = Lib.noLoc;
     }
     super.move();
   }
@@ -137,39 +232,73 @@ public class Splashers extends MovableUnit {
     MapInfo[] infos = rc.senseNearbyMapInfos(center, 4);
     int score = 0;
     for (MapInfo info : infos) {
-
-      //if it is enemy paint and will be effected by the inner splash radius that can repaint
       if (info.getMapLocation().isWithinDistanceSquared(center, 2) &&
               info.getPaint().isEnemy()) {
-        score += 4;
-      }
-      //if it is one of our towers or a wall
-      if (towerLocations.contains(info.getMapLocation()) || info.isWall()) {
-        score -= 1;
-      }
-      //if it is one of their towers
-      else if (!info.isPassable()) {
         score += 5;
       }
-      //if it is allied paint
-      if (info.getPaint().isAlly()) {
+      else if (!info.isPassable()) {
         score -= 1;
       }
-      //if it is neutral paint
-      if (!info.getPaint().isEnemy() && !info.getPaint().isAlly()) {
-        score += 2;
+      else if (info.getPaint().isAlly()) {
+        score -= 2;
       }
-      //if it is a mark
-      if (info.getMark().isAlly()) {
+      else if (!info.getPaint().isEnemy() && !info.getPaint().isAlly()) {
+        score += 1;
+      }
+      else if (info.getMark().isAlly()) {
         score -= 100;
-      }
-      //if it is standing on non-allied paint
-      if (rc.getLocation() == center && !info.getPaint().isAlly()) {
-        score += 3;
       }
     }
 
     return score;
+  }
+
+  private Direction findEnemyPaintGroupToExplore(boolean gotoNeutral) {
+    Direction averageDirection = Direction.CENTER;
+    int total = 0;
+    int totalX = 0;
+    int totalY = 0;
+    for (MapInfo info : lib.nearbyTiles()) {
+      if (info.getPaint() == PaintType.EMPTY && info.isPassable() && gotoNeutral) {
+        total++;
+        totalX += info.getMapLocation().x;
+        totalY += info.getMapLocation().y;
+      }
+      else if (info.getPaint() == PaintType.ENEMY_PRIMARY || info.getPaint() == PaintType.ENEMY_SECONDARY) {
+        total += 2;
+        totalX += info.getMapLocation().x * 2;
+        totalY += info.getMapLocation().y * 2;
+      }
+    }
+    if (total > 0) {
+      MapLocation average = new MapLocation(totalX / total, totalY / total);
+      directionGoing = rc.getLocation().directionTo(average);
+      if (directionGoing == Direction.CENTER) {
+        directionGoing = rc.getLocation().directionTo(average.add(gotoOppositeQuadrant()));
+      }
+    }
+    return Direction.CENTER;
+  }
+
+  private Direction declumpFromAllies() {
+    int total = 0;
+    int totalX = 0;
+    int totalY = 0;
+    for (RobotInfo info : lib.getRobots(false)) {
+      if (info.getTeam() == rc.getTeam()) {
+        totalX += info.getLocation().x;
+        totalY += info.getLocation().y;
+        total++;
+      }
+    }
+    if (total > 0) {
+      MapLocation average = new MapLocation(totalX / total, totalY / total);
+      directionGoing = rc.getLocation().directionTo(average).opposite();
+      if (directionGoing == Direction.CENTER) {
+        directionGoing = rc.getLocation().directionTo(average.add(gotoOppositeQuadrant()));
+      }
+    }
+    return Direction.CENTER;
   }
 
 

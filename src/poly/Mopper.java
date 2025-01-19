@@ -3,6 +3,7 @@ package poly;
 import battlecode.common.*;
 import battlecode.schema.RobotType;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +35,8 @@ public class Mopper extends MovableUnit {
     FOLLOW,
     TRANSFER
   }
+
+  private List<MapLocation> locationsToMop = new ArrayList<>();
 
   MopperTask currentTask = MopperTask.EXPLORING;
 
@@ -78,10 +81,7 @@ public class Mopper extends MovableUnit {
 
       }
       else {
-        nav.avoidEnemyPaint = true;
         explore();
-        // TODO: something with edge finding to use the averageEnemyTower direction
-        // want to walk along edges to the center
       }
     }
     super.move();
@@ -92,9 +92,9 @@ public class Mopper extends MovableUnit {
     for (MapLocation ruinInfo : rc.senseNearbyRuins(-1)) {
       for (MapInfo loc : rc.senseNearbyMapInfos(ruinInfo, 8)) {
         if (loc.getPaint() == PaintType.ENEMY_PRIMARY || loc.getPaint() == PaintType.ENEMY_SECONDARY) {
-          locationGoing = ruinInfo;
-          currentTask = MopperTask.MOPPING_RUIN;
-          return;
+          //locationGoing = ruinInfo;
+          //currentTask = MopperTask.MOPPING_RUIN;
+          //return;
         }
       }
     }
@@ -109,17 +109,23 @@ public class Mopper extends MovableUnit {
     for (MapInfo loc : rc.senseNearbyMapInfos()) {
       if (loc.getPaint() == PaintType.ENEMY_PRIMARY || loc.getPaint() == PaintType.ENEMY_SECONDARY) {
         locationGoing = loc.getMapLocation();
+        if (!locationsToMop.contains(locationGoing)) {
+          locationsToMop.add(locationGoing);
+        }
         currentTask = MopperTask.MOPPING;
-        return;
       }
     }
 
+    // why dont you work
+    /*
     if (rc.getPaint() > 51) {
       currentTask = MopperTask.TRANSFER;
       return;
     }
 
-    currentTask = MopperTask.EXPLORING;
+     */
+
+   // currentTask = MopperTask.EXPLORING;
   }
 
   // transfer paint to ally or tower
@@ -140,12 +146,11 @@ public class Mopper extends MovableUnit {
           return;
         }
         if (bot.getType() == UnitType.LEVEL_ONE_MONEY_TOWER || bot.type == UnitType.LEVEL_TWO_MONEY_TOWER
-            || bot.getType() == UnitType.LEVEL_THREE_MONEY_TOWER) {
+        || bot.getType() == UnitType.LEVEL_THREE_MONEY_TOWER) {
           rc.transferPaint(bot.getLocation(), amountPaintAboveHalf);
           locationGoing = Lib.noLoc;
           return;
         }
-
 
         currentTask = MopperTask.EXPLORING;
         return;
@@ -153,7 +158,6 @@ public class Mopper extends MovableUnit {
       locationGoing = bot.getLocation();
       return;
     }
-    currentTask = MopperTask.EXPLORING;
 
   }
 
@@ -196,12 +200,37 @@ public class Mopper extends MovableUnit {
   // mops an enemy tile
   private void mopTile() throws GameActionException {
     // mops first available tile
-    if (rc.getLocation().distanceSquaredTo(locationGoing) < 3) {
-      if (rc.canAttack(locationGoing)) {
-        rc.attack(locationGoing);
-        locationGoing = Lib.noLoc;
-        currentTask = MopperTask.EXPLORING;
+    locationsToMop.sort((a, b) -> a.distanceSquaredTo(rc.getLocation()) - b.distanceSquaredTo(rc.getLocation()));
+
+
+    for (MapLocation loc: new ArrayList<>(locationsToMop)) {
+      if (rc.canSenseLocation(loc)) {
+        MapInfo info = rc.senseMapInfo(loc);
+        if (info.getPaint() != PaintType.ENEMY_PRIMARY && info.getPaint() != PaintType.ENEMY_SECONDARY) {
+          locationsToMop.remove(loc);
+        }
       }
+    }
+    if (locationsToMop.isEmpty()) {
+      currentTask = MopperTask.EXPLORING;
+      locationGoing = Lib.noLoc;
+      return;
+    }
+
+    if (rc.getLocation().distanceSquaredTo(locationsToMop.getFirst()) < 3) {
+      stopMoving = true;
+      if (rc.canAttack(locationsToMop.getFirst())) {
+        rc.attack(locationsToMop.getFirst());
+        locationsToMop.removeFirst();
+        if (!locationsToMop.isEmpty()) {
+          locationGoing = locationsToMop.getFirst();
+        }
+        stopMoving = false;
+      }
+    }
+    else {
+      locationGoing = locationsToMop.getFirst();
+      stopMoving = false;
     }
 
   }
@@ -210,7 +239,9 @@ public class Mopper extends MovableUnit {
   // if there are ties, chooses the first direction
   private void mopEnemies() throws GameActionException {
     Direction bestDir = numEnemiesInDir();
-    rc.mopSwing(bestDir);
+    if (rc.canMopSwing(bestDir)) {
+      rc.mopSwing(bestDir);
+    }
     if (rc.senseNearbyRobots(-1, rc.getTeam().opponent()).length == 0) {
       currentTask = MopperTask.EXPLORING;
     }
@@ -231,7 +262,6 @@ public class Mopper extends MovableUnit {
 
           if (rc.canAttack(locationGoing)) {
             rc.attack(locationGoing);
-            paintCounter--;
           }
 
         }
@@ -307,7 +337,7 @@ public class Mopper extends MovableUnit {
     for (Direction d : Lib.directions) {
       if (rc.canSenseLocation(rc.getLocation().add(d))) {
         if (rc.senseMapInfo(rc.getLocation().add(d)).getPaint() == PaintType.ENEMY_PRIMARY ||
-            rc.senseMapInfo(rc.getLocation().add(d)).getPaint() == PaintType.ENEMY_SECONDARY) {
+                rc.senseMapInfo(rc.getLocation().add(d)).getPaint() == PaintType.ENEMY_SECONDARY) {
           switch (d) {
             case NORTHEAST:
             case NORTH:
@@ -348,5 +378,4 @@ public class Mopper extends MovableUnit {
       default -> Direction.WEST;
     };
   }
-
 }

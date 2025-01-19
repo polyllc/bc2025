@@ -17,6 +17,10 @@ public abstract class Tower extends Unit {
 
   private int spawnedUnits = 0;
 
+  private int spawnedSoldiers = 0;
+  private int spawnedSplashers = 0;
+  private int spawnedMoppers = 0;
+
   private int mopperBuildCooldown = 0;
 
   protected Tower(RobotController rc) throws GameActionException {
@@ -90,7 +94,7 @@ public abstract class Tower extends Unit {
 
     //System.out.println("cost to build: " + (1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)));
     if (rc.getRoundNum() < 65 || rc.getMoney() > 1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)) { // todo screw around with the directions at times
-      if (rc.getRoundNum() % 6 == 0 && rc.getRoundNum() > 300) {
+      if (rc.getRoundNum() % 6 == 0 && rc.getRoundNum() > 300) { // micro manage the first couple of soldier spawns, they dictate the game
         for (Direction dir : lib.directionsToMiddle(rc.getLocation(), rc.getLocation().add(rc.getLocation().directionTo(lib.center).opposite()))) {
           MapLocation loc = rc.getLocation().add(dir);
           if (rc.getRoundNum() < 10) {
@@ -98,10 +102,12 @@ public abstract class Tower extends Unit {
           }
           if (rc.canBuildRobot(getBestRobot(), loc)) {
             rc.buildRobot(getBestRobot(), loc);
+            updateSpawnedUnits(getBestRobot());
             spawnedUnits++;
           }
           else if (rc.canBuildRobot(getBestRobot(), loc.add(dir.opposite()))) {
             rc.buildRobot(getBestRobot(), loc.add(dir.opposite()));
+            updateSpawnedUnits(getBestRobot());
             spawnedUnits++;
           }
         }
@@ -113,26 +119,42 @@ public abstract class Tower extends Unit {
         }
         if (rc.canBuildRobot(getBestRobot(), loc)) {
           rc.buildRobot(getBestRobot(), loc);
+          updateSpawnedUnits(getBestRobot());
           spawnedUnits++;
         }
         else if (rc.canBuildRobot(getBestRobot(), loc.add(dir.opposite()))) {
           rc.buildRobot(getBestRobot(), loc.add(dir.opposite()));
+          updateSpawnedUnits(getBestRobot());
           spawnedUnits++;
         }
       }
     }
   }
 
+
+  private void updateSpawnedUnits(UnitType unit) {
+    switch (unit) {
+      case SOLDIER -> spawnedSoldiers++;
+      case MOPPER -> spawnedMoppers++;
+      case SPLASHER -> spawnedSplashers++;
+    }
+  }
+
   // todo, update
   private UnitType getBestRobot() {
 
-    if (rc.getRoundNum() < 100) {
+
+
+    if (rc.getRoundNum() < 105) {
       return UnitType.SOLDIER;
+    }
+    else if (spawnedSplashers == 0) {
+      return UnitType.SPLASHER;
     }
     else if (rc.getRoundNum() < 40) {
       return (spawnedUnits % 2 == 0 ? UnitType.SOLDIER : UnitType.MOPPER);
     }
-    else if (rc.getNumberTowers() > 10) {
+    else if (rc.getNumberTowers() > (rc.getMapWidth() + rc.getMapHeight()) / 12) {
       return spawnedUnits % 3 == 0 ? UnitType.SOLDIER : (spawnedUnits % 2 == 0 ? UnitType.MOPPER : UnitType.SPLASHER);
     }
     return spawnedUnits % 2 == 0 ? UnitType.SOLDIER : (spawnedUnits % 3 == 0 ? UnitType.MOPPER : UnitType.SPLASHER);
@@ -159,30 +181,20 @@ public abstract class Tower extends Unit {
 
   private boolean getPaintMarker(MapLocation loc) {
     if (loc.x % 4 == 0) { // 1st column
-      if ((loc.y - 2) % 4 == 0) {
-        return false;
-      }
-      return true;
+      return (loc.y - 2) % 4 != 0;
     }
     else {
       boolean col24 = (loc.y - 4) % 4 == 0 || loc.y % 4 == 0;
       if ((loc.x - 1) % 4 == 0) { // 2nd column
-        if (col24) { //1st and 5th row
-          return true;
-        }
-        return false;
+        //1st and 5th row
+        return col24;
       }
       else if ((loc.x - 2) % 4 == 0) { // 3rd column
-        if ((loc.y - 2) % 4 == 0) {
-          return true;
-        }
-        return false;
+        return (loc.y - 2) % 4 == 0;
       }
       else if ((loc.x - 3) % 4 == 0) { // 4th column
-        if (col24) { //1st and 5th row
-          return true;
-        }
-        return false;
+        //1st and 5th row
+        return col24;
       }
       else {
         if ((loc.y - 2) % 4 == 0) {

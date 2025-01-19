@@ -157,7 +157,7 @@ public class Nav {
 
   private boolean nonAllyPaint(Direction dir) throws GameActionException {
     return (avoidNonAllyPaint && rc.canSenseLocation(rc.getLocation().add(dir)) &&
-            !rc.senseMapInfo(rc.getLocation().add(dir)).getPaint().isAlly());
+            rc.senseMapInfo(rc.getLocation().add(dir)).getPaint() == PaintType.EMPTY);
   }
 
   private boolean enemyTower(Direction dir) throws GameActionException {

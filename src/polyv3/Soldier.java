@@ -267,7 +267,7 @@ public class Soldier extends MovableUnit {
       if (rc.senseMapInfo(shouldBeMarked).getMark() == PaintType.EMPTY) {
         if (rc.canMarkTowerPattern(getBestTowerToMark(), targetLoc)) {
           rc.markTowerPattern(getBestTowerToMark(), targetLoc);
-          System.out.println("Trying to build a tower at " + targetLoc);
+         // System.out.println("Trying to build a tower at " + targetLoc);
         }
       }
 
@@ -278,7 +278,7 @@ public class Soldier extends MovableUnit {
           if (patternTile.getPaint() != PaintType.ENEMY_PRIMARY && patternTile.getPaint() != PaintType.ENEMY_SECONDARY) {
             boolean useSecondaryColor = patternTile.getMark() == PaintType.ALLY_SECONDARY;
             if (rc.canAttack(patternTile.getMapLocation())) {
-              System.out.println("PR Painted " + patternTile.getMapLocation());
+             // System.out.println("PR Painted " + patternTile.getMapLocation());
               rc.attack(patternTile.getMapLocation(), useSecondaryColor);
             }
           }
