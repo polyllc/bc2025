@@ -36,9 +36,12 @@ public class Mopper extends MovableUnit {
   }
 
   MopperTask currentTask = MopperTask.EXPLORING;
+  int age = 0;
+  int transferCounter = 0;
 
   @Override
   public void takeTurn() throws GameActionException {
+    age++;
 
     updateNearbyTowers();
     lib.resourcePatternPainting();
@@ -46,7 +49,7 @@ public class Mopper extends MovableUnit {
     rc.setIndicatorString("lG: " + locationGoing.toString()
         + " | cT: " + currentTask
         + " | dG: " + directionGoing);
-    if (currentTask == MopperTask.EXPLORING) {
+    if (currentTask == MopperTask.EXPLORING || currentTask == MopperTask.FOLLOW) {
       setCurrentTask();
     }
 
@@ -73,17 +76,19 @@ public class Mopper extends MovableUnit {
   @Override
   protected void move() throws GameActionException {
     if (currentTask == MopperTask.EXPLORING) {
-      // hard coded for now
-      if (rc.getRoundNum() < 100) {
+      if (age < 50) {
         currentTask = MopperTask.FOLLOW;
-
+        nav.avoidEnemyPaint = true;
       }
       else {
-        //nav.avoidEnemyPaint = true;
+        nav.avoidEnemyPaint = true;
         if (rc.getRoundNum() % 100 < 10) {
           locationGoing = averageEnemyTower();
         }
         else {
+          if (rc.getHealth() < 20) {
+            locationGoing = Lib.noLoc;
+          }
           explore();
         }
 
@@ -136,6 +141,13 @@ public class Mopper extends MovableUnit {
     if (amountPaintAboveHalf < 0) {
       return;
     }
+    // transferring for too long
+    if (transferCounter > 7) {
+      transferCounter = 0;
+      currentTask = MopperTask.EXPLORING;
+      return;
+    }
+    transferCounter++;
     for (RobotInfo bot: rc.senseNearbyRobots()) {
       if (rc.canTransferPaint(bot.getLocation(), amountPaintAboveHalf)) {
         if (bot.getType() == UnitType.SOLDIER) {
@@ -153,12 +165,14 @@ public class Mopper extends MovableUnit {
         }
 
 
+        transferCounter = 0;
         currentTask = MopperTask.EXPLORING;
         return;
       }
       locationGoing = bot.getLocation();
       return;
     }
+    transferCounter = 0;
     currentTask = MopperTask.EXPLORING;
 
   }
@@ -184,7 +198,6 @@ public class Mopper extends MovableUnit {
 
   // the moppers will follow soliders
   // for the beginning rounds so they don't kill themselves
-  // also tranfers some paint to soliders when they can
   private void follow() throws GameActionException {
     for (RobotInfo botInfo: rc.senseNearbyRobots(-1, rc.getTeam())) {
       if (botInfo.getType() == UnitType.SOLDIER) {
@@ -202,20 +215,51 @@ public class Mopper extends MovableUnit {
 
   // mops an enemy tile
   private void mopTile() throws GameActionException {
+    int enemyPaint = 0;
+    if (rc.getHealth() < 10) {
+      directionGoing = directionGoing.rotateRight();
+      directionGoing = directionGoing.rotateRight();
+      currentTask = MopperTask.EXPLORING;
+      return;
+    }
+
+    nav.avoidEnemyPaint = true;
+
+    for (MapInfo tile: rc.senseNearbyMapInfos()) {
+      if (tile.getPaint().equals(PaintType.ENEMY_PRIMARY) || tile.getPaint().equals(PaintType.ENEMY_SECONDARY)) {
+        enemyPaint++;
+        locationGoing = tile.getMapLocation();
+        if (rc.canAttack(locationGoing)) {
+          rc.attack(locationGoing);
+          enemyPaint--;
+        }
+      }
+    }
+
+    if (enemyPaint == 0) {
+      currentTask = MopperTask.EXPLORING;
+    }
+
+    /*
     // mops first available tile
     if (rc.getLocation().distanceSquaredTo(locationGoing) < 3) {
       if (rc.canAttack(locationGoing)) {
         rc.attack(locationGoing);
         locationGoing = Lib.noLoc;
-        currentTask = MopperTask.EXPLORING;
+        return;
+        //currentTask = MopperTask.EXPLORING;
       }
     }
+
+     */
+    currentTask = MopperTask.EXPLORING;
 
   }
 
   // mops nearby enemies in the best direction with most enemies
   // if there are ties, chooses the first direction
   private void mopEnemies() throws GameActionException {
+    nav.avoidEnemyPaint = true;
     Direction bestDir = numEnemiesInDir();
     if (rc.canMopSwing(bestDir)) {
       rc.mopSwing(bestDir);
@@ -229,6 +273,14 @@ public class Mopper extends MovableUnit {
 
   // cleans up enemy tiles around ruins
   private void cleanUpRuin() throws GameActionException {
+    if (rc.getHealth() < 10) {
+      directionGoing = directionGoing.rotateRight();
+      directionGoing = directionGoing.rotateRight();
+      currentTask = MopperTask.EXPLORING;
+      return;
+    }
+
+    nav.avoidEnemyPaint = true;
 
     int paintCounter = 0;
     for (MapLocation ruinInfo : rc.senseNearbyRuins(-1)) {
