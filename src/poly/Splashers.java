@@ -7,15 +7,7 @@ public class Splashers extends MovableUnit {
   public Splashers(RobotController rc) throws GameActionException {
     super(rc);
     directionGoing = rc.getLocation().directionTo(lib.center);
-    if (rc.getID() % 2 == 0) {
-      directionGoing = directionGoing.rotateLeft();
-    }
-    else {
-      directionGoing = directionGoing.rotateRight();
-    }
-    if (rc.getID() % 3 == 0) {
-      directionGoing = rc.getLocation().directionTo(lib.center);
-    }
+
   }
 
   public enum SplasherTask {
@@ -35,7 +27,7 @@ public class Splashers extends MovableUnit {
     lib.resourcePatternPainting();
     updateNearbyTowers();
 
-    if (rc.getPaint() < 51 && currentTask != SplasherTask.GOING_BACK_TO_PAINT_TOWER) {
+    if (rc.getPaint() < 61) {
       getNearestPaintTower();
       if (nearestPaintTower != Lib.noLoc) {
         locationGoing = nearestPaintTower;
@@ -49,15 +41,6 @@ public class Splashers extends MovableUnit {
 
     if (currentTask == SplasherTask.GOING_BACK_TO_TOWER) {
       getNearestPaintTower();
-      if (rc.canSenseRobotAtLocation(locationGoing)) {
-        RobotInfo tower = rc.senseRobotAtLocation(locationGoing);
-        if (tower.getPaintAmount() < 50 && (tower.getType() == UnitType.LEVEL_ONE_MONEY_TOWER || tower.getType() == UnitType.LEVEL_TWO_MONEY_TOWER || tower.getType() == UnitType.LEVEL_THREE_MONEY_TOWER)) {
-          paintTowerLocations.remove(locationGoing);
-          locationGoing = Lib.noLoc;
-          currentTask = SplasherTask.EXPLORE;
-          return;
-        }
-      }
       if (nearestPaintTower != Lib.noLoc) {
         locationGoing = nearestPaintTower;
         currentTask = SplasherTask.GOING_BACK_TO_PAINT_TOWER;
@@ -80,20 +63,8 @@ public class Splashers extends MovableUnit {
 
     move();
 
+    goTowardsEmptySpots();
     if (currentTask == SplasherTask.EXPLORE) {
-      if (rc.getRoundNum() > 400) {
-      //  locationGoing = lib.rotationalCalc(spawnedTower);
-      }
-
-      if (directionGoing == Direction.CENTER) {
-        //directionGoing = getRushDirection();
-      }
-      if (Direction.CENTER == findEnemyPaintGroupToExplore( RobotPlayer.turnCount > (rc.getMapHeight() + rc.getMapWidth()) / 2)) {
-        //directionGoing = getRushDirection();
-      }
-      if (rc.getRoundNum() % 10 == 0) {
-        declumpFromAllies();
-      }
       paint();
     }
 
@@ -109,6 +80,7 @@ public class Splashers extends MovableUnit {
         }
       }
     }
+
     else {
       nearestPaintTower = Lib.noLoc;
     }
@@ -223,7 +195,7 @@ public class Splashers extends MovableUnit {
   protected void move() throws GameActionException {
     if (currentTask == SplasherTask.EXPLORE) {
       explore();
-      //locationGoing = Lib.noLoc;
+      locationGoing = Lib.noLoc;
     }
     super.move();
   }
@@ -234,7 +206,7 @@ public class Splashers extends MovableUnit {
     for (MapInfo info : infos) {
       if (info.getMapLocation().isWithinDistanceSquared(center, 2) &&
               info.getPaint().isEnemy()) {
-        score += 5;
+        score += 50;
       }
       else if (!info.isPassable()) {
         score -= 1;
@@ -246,60 +218,29 @@ public class Splashers extends MovableUnit {
         score += 1;
       }
       else if (info.getMark().isAlly()) {
-        score -= 100;
+        score -= 10;
       }
     }
 
     return score;
   }
 
-  private Direction findEnemyPaintGroupToExplore(boolean gotoNeutral) {
-    Direction averageDirection = Direction.CENTER;
-    int total = 0;
-    int totalX = 0;
-    int totalY = 0;
-    for (MapInfo info : lib.nearbyTiles()) {
-      if (info.getPaint() == PaintType.EMPTY && info.isPassable() && gotoNeutral) {
-        total++;
-        totalX += info.getMapLocation().x;
-        totalY += info.getMapLocation().y;
-      }
-      else if (info.getPaint() == PaintType.ENEMY_PRIMARY || info.getPaint() == PaintType.ENEMY_SECONDARY) {
-        total += 2;
-        totalX += info.getMapLocation().x * 2;
-        totalY += info.getMapLocation().y * 2;
-      }
-    }
-    if (total > 0) {
-      MapLocation average = new MapLocation(totalX / total, totalY / total);
-      directionGoing = rc.getLocation().directionTo(average);
-      if (directionGoing == Direction.CENTER) {
-        directionGoing = rc.getLocation().directionTo(average.add(gotoOppositeQuadrant()));
-      }
-    }
-    return Direction.CENTER;
-  }
 
-  private Direction declumpFromAllies() {
-    int total = 0;
-    int totalX = 0;
-    int totalY = 0;
-    for (RobotInfo info : lib.getRobots(false)) {
-      if (info.getTeam() == rc.getTeam()) {
-        totalX += info.getLocation().x;
-        totalY += info.getLocation().y;
-        total++;
-      }
-    }
-    if (total > 0) {
-      MapLocation average = new MapLocation(totalX / total, totalY / total);
-      directionGoing = rc.getLocation().directionTo(average).opposite();
-      if (directionGoing == Direction.CENTER) {
-        directionGoing = rc.getLocation().directionTo(average.add(gotoOppositeQuadrant()));
-      }
-    }
-    return Direction.CENTER;
-  }
+  private void goTowardsEmptySpots() throws GameActionException {
+    MapInfo[] nearbyTiles = lib.nearbyTiles();
+    int bestTileDistance = 999999;
 
+      for (MapInfo tile : nearbyTiles) {
+        if (tile.isPassable()) {
+          if (tile.getPaint() == PaintType.EMPTY) { // todo, make this more random
+            int distance = tile.getMapLocation().distanceSquaredTo(lib.center);
+            if (bestTileDistance < distance) {
+              bestTileDistance = distance;
+              directionGoing = rc.getLocation().directionTo(tile.getMapLocation());
+            }
+          }
+        }
+      }
+  }
 
 }

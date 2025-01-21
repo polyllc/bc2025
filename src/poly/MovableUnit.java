@@ -32,38 +32,33 @@ public abstract class MovableUnit extends Unit {
   public MovableUnit(RobotController rc) throws GameActionException {
     super(rc);
     nav = new Nav(rc);
-    for (Direction dir : Lib.directions) {
-      RobotInfo robot = rc.senseRobotAtLocation(rc.getLocation().add(dir));
-      if (robot != null) {
-        if (robot.getTeam() == rc.getTeam()) {
-          if (lib.isTower(robot.getType())) {
-            spawnedTower = robot.getLocation();
-          }
+    for (RobotInfo robot : rc.senseNearbyRobots(4)) {
+      if (robot.getTeam() == rc.getTeam()) {
+        if (lib.isTower(robot.getType())) {
+          spawnedTower = robot.getLocation();
         }
       }
     }
   }
 
   protected void move() throws GameActionException {
-    if (!stopMoving) {
-      explore();
-      if (locationGoing == Lib.noLoc) {
-        if (directionGoing != Direction.CENTER) {
-          nav.goTo(rc.getLocation().add(directionGoing));
-          turnsMovingInDirection++;
-        }
-      } else {
+    explore();
+    if (locationGoing == Lib.noLoc) {
+      if (directionGoing != Direction.CENTER) {
+        nav.goTo(rc.getLocation().add(directionGoing));
+        turnsMovingInDirection++;
+      }
+    } else {
 
-        boolean goToResult = nav.navTo(locationGoing);
-        lastMovement = goToResult; //if we need to save bytecode, well this is where we're saving it
-        lastLocationGoing = locationGoing;
+      boolean goToResult = nav.goTo(locationGoing);
+      lastMovement = goToResult; //if we need to save bytecode, well this is where we're saving it
+      lastLocationGoing = locationGoing;
+      if (!lastMovement) {
+        lastMovement = goToResult;
         if (!lastMovement) {
-          lastMovement = goToResult;
+            lastMovement = nav.navTo(locationGoing);
           if (!lastMovement) {
-            lastMovement = nav.goTo(locationGoing);
-            if (!lastMovement) {
-              lastMovement = nav.goTo(rc.getLocation().directionTo(locationGoing));
-            }
+            lastMovement = nav.goTo(rc.getLocation().directionTo(locationGoing));
           }
         }
       }
@@ -71,8 +66,7 @@ public abstract class MovableUnit extends Unit {
   }
 
   protected void explore() throws GameActionException {
-
-    if (lib.detectCorner(directionGoing) || lib.detectCorner(rc.getLocation(), 5)) {
+    if (lib.detectCorner(directionGoing)) {
       // directionGoing = rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
       if (rng.nextBoolean()) {
         directionGoing = directionGoing.rotateLeft().rotateLeft();
@@ -80,7 +74,7 @@ public abstract class MovableUnit extends Unit {
         directionGoing = directionGoing.rotateRight().rotateRight();
       }
     }
-    if (turnsMovingInDirection > (rc.getMapHeight() + rc.getMapWidth()) / 2.5) {
+    else if (turnsMovingInDirection > (rc.getMapHeight() + rc.getMapWidth()) / 2) {
       turnsMovingInDirection = 0;
       if (rng.nextBoolean()) {
         directionGoing = directionGoing.rotateLeft().rotateLeft();
@@ -88,7 +82,7 @@ public abstract class MovableUnit extends Unit {
         directionGoing = directionGoing.rotateRight().rotateRight();
       }
     }
-    if (turnsMovingInDirection > (rc.getMapHeight() + rc.getMapWidth()) / 7) {
+    else if (turnsMovingInDirection > (rc.getMapHeight() + rc.getMapWidth()) / 5) {
       if (lib.detectWall(rc.getLocation()) != Direction.CENTER) {
         directionGoing = lib.detectWall(rc.getLocation());
       }
@@ -134,14 +128,27 @@ public abstract class MovableUnit extends Unit {
     return rc.getLocation().directionTo(lib.center);
   }
 
-  protected Direction gotoOppositeQuadrant() {
-    return switch (lib.getQuadrant()) {
-      case 1 -> Direction.SOUTHWEST;
-      case 2 -> Direction.SOUTHEAST;
-      case 3 -> Direction.NORTHEAST;
-      case 4 -> Direction.NORTHWEST;
-      default -> getRushDirection();
-    };
+
+  // updates list in Lib for where ally towers are
+  protected void updateAllySpawns() throws GameActionException {
+    lib.spawnLocations = towerLocations;
+    lib.autofillEnemySpawnPoints(spawnedTower);
   }
 
+  // gets the direction of the average enemy tower location
+  // aka where the most "noise" is
+  protected MapLocation averageEnemyTower() throws GameActionException {
+    List<MapLocation> enemyTowers = lib.enemyTowerLocations();
+    int x = 0;
+    int y = 0;
+    for (MapLocation tower: enemyTowers) {
+      x+= tower.x;
+      y+= tower.y;
+    }
+    x = x / enemyTowers.size();
+    y = y / enemyTowers.size();
+
+    MapLocation averageLoc = new MapLocation(x, y);
+    return averageLoc;
+  }
 }

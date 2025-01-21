@@ -209,7 +209,9 @@ public class Mopper extends MovableUnit {
   // if there are ties, chooses the first direction
   private void mopEnemies() throws GameActionException {
     Direction bestDir = numEnemiesInDir();
-    rc.mopSwing(bestDir);
+    if (rc.canMopSwing(bestDir)) {
+      rc.mopSwing(bestDir);
+    }
     if (rc.senseNearbyRobots(-1, rc.getTeam().opponent()).length == 0) {
       currentTask = MopperTask.EXPLORING;
     }

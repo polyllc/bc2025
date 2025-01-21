@@ -9,21 +9,22 @@ import java.util.List;
 
 public class Lib {
 
-  private RobotController rc;
+  RobotController rc;
 
-  private int roundNum;
-  private int[] lastRoundNum = new int[5];
-  private MapLocation spawnLocations[];
+  int roundNum;
+  int[] lastRoundNum = new int[5];
+  List<MapLocation> spawnLocations;
+  List<MapLocation> enemyTowers;
 
-  public final MapLocation center;
+  final MapLocation center;
 
-  private RobotInfo[] currentRoundRobots =  new RobotInfo[0];
+  RobotInfo[] currentRoundRobots =  new RobotInfo[0];
 
-  private MapInfo[] currentRoundMapInfo = new MapInfo[0];
+  MapInfo[] currentRoundMapInfo = new MapInfo[0];
 
-  public static MapLocation noLoc = new MapLocation(256,256);
+  static MapLocation noLoc = new MapLocation(256,256);
 
-  public MapLocation oppositeMapLocation;
+  MapLocation oppositeMapLocation;
 
   public Lib(RobotController robot) throws GameActionException {
     rc = robot;
@@ -325,15 +326,19 @@ public class Lib {
 
   // todo, somehow update this to bc2025
   private List<MapLocation> allySpawnZones() {
-    return List.of();
+    return spawnLocations;
   }
 
   private boolean isEnemyCenter(MapLocation loc) {
-    return false;
+    return enemyTowers.contains(loc);
   }
 
   private void setEnemyCenter(MapLocation loc) {
+    enemyTowers.add(loc);
+  }
 
+  public List<MapLocation> enemyTowerLocations() {
+    return enemyTowers;
   }
 
   public void preliminaryAutofillEnemySpawnPoints() throws GameActionException {
@@ -448,40 +453,40 @@ public class Lib {
     return noLoc;
   }
 
-  MapLocation rotationalCalc(MapLocation loc) {
-    int q = getQuadrant(loc);
-    MapLocation origin = getOrigin(q);
-    int xOffset = loc.x - origin.x;
-    int yOffset = loc.y - origin.y;
-    int oppositeQ = 0;
-    if(q == 1){
-      oppositeQ = 3;
-    }
-    else if(q == 2){
-      oppositeQ = 4;
-    }
-    else if(q == 3){
-      oppositeQ = 1;
-    }
-    else if(q == 4){
-      oppositeQ = 2;
-    }
-    MapLocation otherOrigin = getOrigin(oppositeQ);
-    int realX = 0;
-    int realY = 0;
-    switch (oppositeQ){
-      case 1: realX = otherOrigin.x + Math.abs(xOffset); realY = otherOrigin.y + Math.abs(yOffset); break;
-      case 2: realX = otherOrigin.x - Math.abs(xOffset); realY = otherOrigin.y + Math.abs(yOffset); break;
-      case 3: realX = otherOrigin.x - Math.abs(xOffset); realY = otherOrigin.y - Math.abs(yOffset); break;
-      case 4: realX = otherOrigin.x + Math.abs(xOffset); realY = otherOrigin.y - Math.abs(yOffset); break;
-    }
-    if(new MapLocation(realX, realY).distanceSquaredTo(loc) < 30000){
-      return new MapLocation(realX, realY);
+  MapLocation rotationalCalc(MapLocation loc) throws GameActionException {
+    for(MapLocation allySpawn : allySpawnZones()){
+      int q = getQuadrant(allySpawn);
+      MapLocation origin = getOrigin(q);
+      int xOffset = allySpawn.x - origin.x;
+      int yOffset = allySpawn.y - origin.y;
+      int oppositeQ = 0;
+      if(q == 1){
+        oppositeQ = 3;
+      }
+      if(q == 2){
+        oppositeQ = 4;
+      }
+      if(q == 3){
+        oppositeQ = 1;
+      }
+      if(q == 4){
+        oppositeQ = 2;
+      }
+      MapLocation otherOrigin = getOrigin(oppositeQ);
+      int realX = 0;
+      int realY = 0;
+      switch (oppositeQ){
+        case 1: realX = otherOrigin.x + Math.abs(xOffset); realY = otherOrigin.y + Math.abs(yOffset); break;
+        case 2: realX = otherOrigin.x - Math.abs(xOffset); realY = otherOrigin.y + Math.abs(yOffset); break;
+        case 3: realX = otherOrigin.x - Math.abs(xOffset); realY = otherOrigin.y - Math.abs(yOffset); break;
+        case 4: realX = otherOrigin.x + Math.abs(xOffset); realY = otherOrigin.y - Math.abs(yOffset); break;
+      }
+      if(new MapLocation(realX, realY).distanceSquaredTo(loc) < 3){
+        return new MapLocation(realX, realY);
+      }
     }
     return noLoc;
   }
-
-
 
 
 
@@ -568,6 +573,10 @@ public class Lib {
       return Direction.WEST;
     }
     return Direction.CENTER;
+  }
+
+  public int minTowers() {
+    return rc.getMapHeight() + rc.getMapWidth() / 15;
   }
 
 }

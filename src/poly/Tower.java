@@ -17,10 +17,6 @@ public abstract class Tower extends Unit {
 
   private int spawnedUnits = 0;
 
-  private int spawnedSoldiers = 0;
-  private int spawnedSplashers = 0;
-  private int spawnedMoppers = 0;
-
   private int mopperBuildCooldown = 0;
 
   protected Tower(RobotController rc) throws GameActionException {
@@ -92,9 +88,31 @@ public abstract class Tower extends Unit {
       }
     }
 
+    if (rc.getRoundNum() < 10) {
+      MapLocation middle = rc.getLocation();
+      switch (lib.getQuadrant()) {
+        case 1: middle = middle.add(Direction.SOUTHWEST); break;
+        case 2: middle = middle.add(Direction.SOUTHEAST); break;
+        case 3: middle = middle.add(Direction.NORTHEAST); break;
+        case 4: middle = middle.add(Direction.NORTHWEST); break;
+      }
+      for (Direction dir : lib.directionsToMiddle(rc.getLocation(), middle)) {
+        if (rc.canBuildRobot(getBestRobot(), rc.getLocation().add(dir).add(dir))) {
+          rc.buildRobot(getBestRobot(), rc.getLocation().add(dir).add(dir));
+          spawnedUnits++;
+        }
+        if (rc.canBuildRobot(getBestRobot(), rc.getLocation().add(dir))) {
+          rc.buildRobot(getBestRobot(), rc.getLocation().add(dir));
+          spawnedUnits++;
+        }
+
+      }
+    }
+
+
     //System.out.println("cost to build: " + (1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)));
-    if (rc.getRoundNum() < 65 || rc.getMoney() > 1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)) { // todo screw around with the directions at times
-      if (rc.getRoundNum() % 6 == 0 && rc.getRoundNum() > 300) { // micro manage the first couple of soldier spawns, they dictate the game
+    if (rc.getRoundNum() < 65 || rc.getMoney() > 1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 1) || (rc.getMoney() > 250 && rc.getNumberTowers() >= lib.minTowers())) { // todo screw around with the directions at times
+      if (rc.getRoundNum() % (int) Math.clamp((rc.getRoundNum() - 300) / 60, 5, 9) == 0 && rc.getRoundNum() > 300) { // micro manage the first couple of soldier spawns, they dictate the game
         for (Direction dir : lib.directionsToMiddle(rc.getLocation(), rc.getLocation().add(rc.getLocation().directionTo(lib.center).opposite()))) {
           MapLocation loc = rc.getLocation().add(dir);
           if (rc.getRoundNum() < 10) {
@@ -102,12 +120,10 @@ public abstract class Tower extends Unit {
           }
           if (rc.canBuildRobot(getBestRobot(), loc)) {
             rc.buildRobot(getBestRobot(), loc);
-            updateSpawnedUnits(getBestRobot());
             spawnedUnits++;
           }
           else if (rc.canBuildRobot(getBestRobot(), loc.add(dir.opposite()))) {
             rc.buildRobot(getBestRobot(), loc.add(dir.opposite()));
-            updateSpawnedUnits(getBestRobot());
             spawnedUnits++;
           }
         }
@@ -119,49 +135,33 @@ public abstract class Tower extends Unit {
         }
         if (rc.canBuildRobot(getBestRobot(), loc)) {
           rc.buildRobot(getBestRobot(), loc);
-          updateSpawnedUnits(getBestRobot());
           spawnedUnits++;
         }
         else if (rc.canBuildRobot(getBestRobot(), loc.add(dir.opposite()))) {
           rc.buildRobot(getBestRobot(), loc.add(dir.opposite()));
-          updateSpawnedUnits(getBestRobot());
           spawnedUnits++;
         }
       }
     }
   }
 
-
-  private void updateSpawnedUnits(UnitType unit) {
-    switch (unit) {
-      case SOLDIER -> spawnedSoldiers++;
-      case MOPPER -> spawnedMoppers++;
-      case SPLASHER -> spawnedSplashers++;
-    }
-  }
-
   // todo, update
   private UnitType getBestRobot() {
 
-
-
-    if (rc.getRoundNum() < 105) {
+    if (rc.getRoundNum() < 95) {
       return UnitType.SOLDIER;
-    }
-    else if (spawnedSplashers == 0) {
-      return UnitType.SPLASHER;
     }
     else if (rc.getRoundNum() < 40) {
       return (spawnedUnits % 2 == 0 ? UnitType.SOLDIER : UnitType.MOPPER);
     }
-    else if (rc.getNumberTowers() > (rc.getMapWidth() + rc.getMapHeight()) / 12) {
+    else if (rc.getNumberTowers() > lib.minTowers() + 1) {
       return spawnedUnits % 3 == 0 ? UnitType.SOLDIER : (spawnedUnits % 2 == 0 ? UnitType.MOPPER : UnitType.SPLASHER);
     }
     return spawnedUnits % 2 == 0 ? UnitType.SOLDIER : (spawnedUnits % 3 == 0 ? UnitType.MOPPER : UnitType.SPLASHER);
   }
 
   private void upgrade() throws GameActionException {
-    if (rc.getMoney() > 1700) {
+    if (rc.getMoney() > 1500) {
       if (rc.canUpgradeTower(rc.getLocation())) {
         rc.upgradeTower(rc.getLocation());
       }
