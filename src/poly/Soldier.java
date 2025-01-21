@@ -280,11 +280,11 @@ public class Soldier extends MovableUnit {
 
       boolean isNotRuin = true;
       MapLocation ruin = rc.getLocation();
-//      for (MapInfo loc : lib.nearbyTiles()) {
-//        if (loc.hasRuin()) {
-//         // isNotRuin = false;
-//        }
-//      }
+      for (MapInfo loc : lib.nearbyTiles()) {
+        if (loc.hasRuin()) {
+          isNotRuin = false;
+        }
+      }
 
       for (MapInfo loc : possiblePaintLocations) {
 
@@ -301,14 +301,14 @@ public class Soldier extends MovableUnit {
             return;
           }
         }
-//
-//        if (!isNotRuin) {
-//          if (rc.getLocation().directionTo(ruin) != rc.getLocation().directionTo(loc.getMapLocation())) {
-//            isNotRuin = true;
-//          }
-//        }
 
-        if (loc.getPaint().isAlly()) {
+        if (!isNotRuin) {
+          if (rc.getLocation().directionTo(ruin) != rc.getLocation().directionTo(loc.getMapLocation())) {
+            isNotRuin = true;
+          }
+        }
+
+        if (loc.getPaint().isAlly() && currentTask != SoldierTask.PAINTING_RUIN) {
          // if (loc.getMark() != loc.getPaint() && isNotRuin) {
             if (paintType(loc.getPaint()) != getPaintMarker(loc.getMapLocation())) {
               if (rc.canAttack(loc.getMapLocation())) {
@@ -431,13 +431,13 @@ public class Soldier extends MovableUnit {
     for (MapInfo tile : nearbyTiles) {
       if (tile.hasRuin()) {
         if (!rc.canSenseRobotAtLocation(tile.getMapLocation())) {
-//          for (int i = 0; i < previousRuinsRounds.size(); i++) {
-//            if (previousRuins.get(i).equals(tile.getMapLocation())) {
-//              if (previousRuinsRounds.get(i) > 0) { // our ruins are still on cooldown
-//                return;
-//              }
-//            }
-//          }
+          for (int i = 0; i < previousRuinsRounds.size(); i++) {
+            if (previousRuins.get(i).equals(tile.getMapLocation())) {
+              if (previousRuinsRounds.get(i) > 0) { // our ruins are still on cooldown
+                return;
+              }
+            }
+          }
           currentRuin = tile;
           currentTask = SoldierTask.PAINTING_RUIN;
           locationGoing = tile.getMapLocation();
@@ -627,7 +627,7 @@ public class Soldier extends MovableUnit {
 
 
   private UnitType getBestTowerToMark() {
-    if (rc.getRoundNum() < rc.getMapWidth() / 2) {
+    if (rc.getRoundNum() < rc.getMapWidth()) {
       return UnitType.LEVEL_ONE_MONEY_TOWER;
     }
     else if (rc.getRoundNum() < 500) {

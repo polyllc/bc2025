@@ -111,7 +111,7 @@ public abstract class Tower extends Unit {
 
 
     //System.out.println("cost to build: " + (1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7)));
-    if (rc.getRoundNum() < 65 || rc.getMoney() > 1200 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 1) || (rc.getMoney() > 250 && rc.getNumberTowers() >= lib.minTowers())) { // todo screw around with the directions at times
+    if (rc.getRoundNum() < 65 || rc.getMoney() > 1000 + (Math.sqrt(rc.getLocation().distanceSquaredTo(lib.center)) * 7) || (rc.getMoney() > 250 && rc.getNumberTowers() >= lib.minTowers())) { // todo screw around with the directions at times
       if (rc.getRoundNum() % (int) Math.clamp((rc.getRoundNum() - 300) / 60, 5, 9) == 0 && rc.getRoundNum() > 300) { // micro manage the first couple of soldier spawns, they dictate the game
         for (Direction dir : lib.directionsToMiddle(rc.getLocation(), rc.getLocation().add(rc.getLocation().directionTo(lib.center).opposite()))) {
           MapLocation loc = rc.getLocation().add(dir);
